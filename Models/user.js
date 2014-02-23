@@ -15,7 +15,7 @@ var ObjectId    = Schema.ObjectId;
 var UserSchema = new Schema({
     id:                 ObjectId,
     name:               { type: String, trim: true, required: true },
-    email:              { type: String, trim: true, required: true, unique: true },
+    email:              { type: String, trim: true, required: true},
     username:           { type: String, trim: true, required: true, lowercase: true },
     hashed_password:    { type: String, trim: true, required: true },
     role:               { type: String, trim: true, required: true, enum: ['User', 'Developer', 'Admin'], default: 'User' }

@@ -7,6 +7,7 @@ var restify         = require("restify");
 var restifyOAuth2   = require("restify-oauth2-cc");
 var mongoose        = require('mongoose');
 var fs              = require('fs');
+var Logger          = require('bunyan');
 
 // Load configurations
 var env     = process.env.NODE_ENV || 'development';
@@ -16,6 +17,23 @@ var config  = require('./Configs/config')[env];
 var models_path = config.root + '/Models'
 var config_path = config.root + '/Configs'
 var routes_path = config.root + '/Routes' 
+
+var log = new Logger({
+  name: 'helloapi',
+  streams: [
+    {
+      stream: process.stdout,
+      level: 'debug'
+    },
+    {
+      path: '/tmp/restify.log',
+      level: 'trace'
+    }
+  ],
+  serializers: {
+    req: Logger.stdSerializers.req
+  },
+});
 
 // Connect to MongoDB
 mongoose.connect(config.db_url);
@@ -42,6 +60,7 @@ var hooks = require("./Configs/hooks");
 var server = restify.createServer({
     name: "Example Restify-OAuth2 Resource Owner Password Credentials Server",
     version: require("./package.json").version,
+    log: log, 
     formatters: {
         "application/hal+json": function (req, res, body) {
             return res.formatters["application/json"](req, res, body);
@@ -57,6 +76,8 @@ restifyOAuth2.cc(server, { tokenEndpoint: "/token", hooks: hooks });
 
 require(routes_path + '/routes')(server, config);
 
+var Device = mongoose.model('Device');
+var Sensor = mongoose.model('Sensor');
 
 var port = config.port;
     server.listen(port);

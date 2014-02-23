@@ -1,7 +1,6 @@
 "use strict";
 
 var mongoose    = require('mongoose');
-var _           = require("underscore");
 var crypto      = require("crypto");
 var Client      = mongoose.model('ClientKey');
 var Token       = mongoose.model('AuthToken');
