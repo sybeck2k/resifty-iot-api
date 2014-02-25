@@ -9,12 +9,8 @@ function validateUser(req, res){
     }
 }
 
-module.exports = function (server, config) 
-{
-    var config_path = config.root + '/config'
-
-    server.get('api/V1/user', function (req, res, next) 
-    {
+module.exports = function (server, config) {
+    server.get('api/V1/user', function (req, res, next) {
         validateUser(req, res);
 
         var query = User.where( 'username', new RegExp('^' + req.username + '$', 'i') );

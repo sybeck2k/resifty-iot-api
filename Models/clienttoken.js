@@ -11,7 +11,7 @@ var restify     = require('restify');
  */
 var TokenSchema = new Schema({
     id:         ObjectId,
-    username:   { type: String, trim: true, required: true },
+    clientId:   { type: String, trim: true, required: true },
     token:      { type: String, trim: true, required: true }
 })
 
@@ -29,4 +29,4 @@ TokenSchema.methods = {
 
 }
 
-mongoose.model('AuthToken', TokenSchema)
+mongoose.model('ClientToken', TokenSchema)

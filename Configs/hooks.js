@@ -3,7 +3,7 @@
 var mongoose    = require('mongoose');
 var crypto      = require("crypto");
 var Client      = mongoose.model('ClientKey');
-var Token       = mongoose.model('AuthToken');
+var Token       = mongoose.model('ClientToken');
 var User        = mongoose.model('User');
 
 // Load configurations
@@ -46,24 +46,23 @@ exports.validateClient = function (clientId, clientSecret, cb) {
     });
 };
 
-exports.grantClientToken = function (username, password, cb)  {
-    var query = User.where( 'username', new RegExp('^' + username + '$', 'i') );
-
-    query.findOne(function (err, user) {
+exports.grantClientToken = function (clientId, clientSecret, cb)  {
+    Client.where( 'clientId', new RegExp('^' + clientId + '$', 'i') ).findOne(function (err, client) {
+        console.log(client);
         if (err) {
             cb(null, false);
-        } else if (!user) {
+        } else if (!client) {
             cb(null, false);
-        } else if (user.authenticate(password)) {
+        } else if (client.authenticate(clientSecret)) {
             // If the user authenticates, generate a token for them and store it to the database so
             // we can look it up later.
 
-            var token       = generateToken(username + ":" + password);
-            var newToken    = new Token({ username: username, token: token });
+            var token       = generateToken(clientSecret + ":" + clientSecret);
+            var newToken    = new Token({ clientId: clientId, token: token });
             newToken.save();
 
             // Store the token in the Redis datastore so we can perform fast queries on it
-            redisClient.set(token, username);
+            redisClient.set(token, clientId);
 
             // Call back with the token so Restify-OAuth2 can pass it on to the client.
             return cb(null, token);
@@ -76,7 +75,6 @@ exports.grantClientToken = function (username, password, cb)  {
 exports.authenticateToken = function (token, cb)  {
     // Query the Redis store for the Auth Token 
     redisClient.get(token, function (err, reply) {
-        console.log("Redis reply " + reply);
         /* 
          * If we get an error fall back to the MongoDb incase
          * Redis has deleted the token
@@ -89,10 +87,8 @@ exports.authenticateToken = function (token, cb)  {
                     if( authToken === null ) {
                         cb(null, false);
                     } else {
-                        // If the token authenticates, call back with the corresponding username. 
-                        // Restify-OAuth2 will put it in the
-                        // request's `username` property.
-                        return cb(null, authToken.username);
+                        redisClient.set(authToken, authToken.clientId);
+                        return cb(null, authToken.clientId);
                     }
                 }
             });
