@@ -6,6 +6,8 @@ var mongoose    = require('mongoose');
 var validate    = require('mongoose-validator').validate;
 var Schema      = mongoose.Schema;
 var ObjectId    = Schema.ObjectId;
+var paginate    = require('../lib/mongoose-paginate');
+
 
 /**
  * Device Schema
@@ -35,5 +37,7 @@ DeviceSchema.pre('save', function(next) {
 
 DeviceSchema.methods = {
 }
+
+DeviceSchema.statics.paginate = paginate;
 
 mongoose.model('Device', DeviceSchema)

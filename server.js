@@ -3,13 +3,13 @@
 /*
  * Main Imports
  */
-var restify         = require("restify");
-var restifyOAuth2   = require("restify-oauth2");
-var mongoose        = require('mongoose');
-var fs              = require('fs');
-var Logger          = require('bunyan');
-var influx          = require('influx');
-
+var restify           = require("restify");
+var restifyOAuth2     = require("restify-oauth2");
+var mongoose          = require('mongoose');
+var fs                = require('fs');
+var Logger            = require('bunyan');
+var influx            = require('influx');
+var url               = require("url");
 // Load configurations
 var env     = process.env.NODE_ENV || 'development';
 var config  = require('./Configs/config')[env];
@@ -114,8 +114,32 @@ var server = restify.createServer({
 // Setup the Restify Server with Oauth2
 server.use(restify.authorizationParser());
 server.use(restify.bodyParser({ mapParams: false }));
-
+//server.use(restify.queryParser({ mapParams: false }));
 server.pre(restify.pre.sanitizePath());
+
+// get pagination info
+server.pre(function(req, res, next) {
+  //pagination makes sense only on `get` requests!
+  if (req.method !== 'GET') {
+    return next();
+  }
+  var query = url.parse(req.url,true).query;
+
+  var requst_pagination_page_number = 'page' in query ? parseInt(query['page']) : 1,
+      requst_pagination_per_page    = 'per_page' in query ? parseInt(query['per_page']) : config.pagination.results_per_page;
+
+  if (requst_pagination_page_number === 0 ) {
+    return next(new restify.InvalidArgumentError("Pages must be 1-indexed"));
+  }
+
+  if (requst_pagination_per_page > config.pagination.max_results) {
+    requst_pagination_per_page = config.pagination.max_results;
+  }
+  req.results_per_page = requst_pagination_per_page;
+  req.page = requst_pagination_page_number;
+
+  return next();
+});
 
 restifyOAuth2.cc(server, { tokenEndpoint: "/token", hooks: hooks });
 

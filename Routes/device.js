@@ -9,18 +9,28 @@ function validateClient(req, res, next) {
   next();
 };
 
+function header_next(req, res, next) {
+  if (req.page_count > req.page) {
+    
+  } else {
+    
+  }
+};
+
 module.exports = function (server, config) {
   var resource_base_url = '/device',
       Resource = Device;
 
   server.get(resource_base_url, validateClient, function (req, res, next) {
-    Resource.find(function (err, resources) {
+    Resource.paginate({}, req.page, req.results_per_page, function (err, page_count, resources) {
       if (err)
         return next(err);
+
+      req.page_count = page_count;
       res.send(resources);
       return next();
     });
-  });
+  }, header_next);
 
   server.get(resource_base_url + '/:id', validateClient, function (req, res, next) {
     if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {

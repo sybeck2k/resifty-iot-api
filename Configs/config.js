@@ -17,6 +17,10 @@ module.exports = {
             password: "root",
             database: "test"
         },
+        pagination: {
+            max_results: 100,
+            results_per_page: 20
+        },
         redis_url: null,
         session_timeout: 20 * 60 * 10, // defaults to 20 minutes, in ms (20 * 60 * 1000)
         socket_loglevel: '1', // 0 - error, 1 - warn, 2 - info, 3 - debug
@@ -30,24 +34,7 @@ module.exports = {
         version: '1.0.0'
     },
     test: {
-        root: require('path').normalize(__dirname + '/..'),
-        app: {
-            name: 'restify-oauth2-mongoDB'
-        },
-        host: 'http://yourapp.herokuapp.com',
-        port: process.env.PORT,
-        db_url: process.env.MONGOLAB_URI || process.env.MONGOHQ_URL,
-        redis_url: process.env.REDISTOGO_URL,
-        session_timeout: 20 * 60 * 10, // defaults to 20 minutes, in ms (20 * 60 * 10)
-        socket_loglevel: '1', // 0 - error, 1 - warn, 2 - info, 3 - debug
-        mailSettings : {
-            mailFrom: 'test@gmail.com',
-            mailService: "Gmail",
-            mailAuth: {user: "test@gmail.com", pass: "testpass"},
-            sendEmail: false,
-            browserPreview: true
-        },
-        version: '1.0.0'
+
     }, 
     production: {
 
