@@ -14,27 +14,31 @@ module.exports = function (server, config) {
       Resource = Device;
 
   server.get(resource_base_url, validateClient, function (req, res, next) {
-    Resource.find(function (error, resources) {
-      if (error)
-        return next(error);
+    Resource.find(function (err, resources) {
+      if (err)
+        return next(err);
       res.send(resources);
       return next();
     });
   });
 
   server.get(resource_base_url + '/:id', validateClient, function (req, res, next) {
+    if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+      return next(new restify.InvalidArgumentError());
+    }
+    
     Resource.findOne({_id: req.params.id}, function(err, resource){
-      if (error)
-        return next(error);
+      if (err)
+        return next(err);
       res.send(resource);
       return next();
     });
   });
       
   server.post(resource_base_url, validateClient, function (req, res, next) {
-    Resource.create({ name: req.body.name }, function (error, new_resource) {
-      // If there are any errors, pass them to next in the correct format
-      if (error) return next(error);
+    Resource.create({ name: req.body.name }, function (err, new_resource) {
+      if (err) 
+        return next(err);
       res.send(201, new_resource);
     })
   });
