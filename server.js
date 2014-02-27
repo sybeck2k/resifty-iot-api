@@ -66,13 +66,6 @@ influx_client.getDatabaseNames(function(err, database_names){
   }
 });
 
-// Load hooks after models have been loaded
-var hooks = require("./Configs/hooks");
-
-/* 
- * NB: we're using [HAL](http://stateless.co/hal_specification.html) here to communicate RESTful links among our
- * resources, but you could use any JSON linking format, or XML, or even just Link headers.
- */ 
 var server = restify.createServer({
   name: "Example Restify-OAuth2 Resource Owner Password Credentials Server",
   version: require("./package.json").version,
@@ -141,7 +134,7 @@ server.pre(function(req, res, next) {
   return next();
 });
 
-restifyOAuth2.cc(server, { tokenEndpoint: "/token", hooks: hooks });
+restifyOAuth2.cc(server, { tokenEndpoint: "/token", hooks: require("./lib/oauth-hooks") });
 
 require(routes_path + '/oauth')(server, config);
 require(routes_path + '/device')(server, config);
