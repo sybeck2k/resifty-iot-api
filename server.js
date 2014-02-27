@@ -11,12 +11,11 @@ var Logger            = require('bunyan');
 var influx            = require('influx');
 var url               = require("url");
 // Load configurations
-var env     = process.env.NODE_ENV || 'development';
-var config  = require('./Configs/config')[env];
+var env     = process.env.NODE_ENV || 'dev';
+var config  = require('./config.'+ env);
 
 // Paths
 var models_path = config.root + '/Models'
-var config_path = config.root + '/Configs'
 var routes_path = config.root + '/Routes' 
 
 var log = new Logger({
