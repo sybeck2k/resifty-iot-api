@@ -6,6 +6,7 @@ var mongoose    = require('mongoose');
 var validate    = require('mongoose-validator').validate;
 var Schema      = mongoose.Schema;
 var ObjectId    = Schema.ObjectId;
+var paginate    = require('../lib/mongoose-paginate');
 
 /**
  * Device Schema
@@ -13,10 +14,11 @@ var ObjectId    = Schema.ObjectId;
 var SensorSchema = new Schema({
     id:                 ObjectId,
     name:               { type: String, trim: true, required: true },
+    persistant:         { type: Boolean, default: true },
     description:        { type: String, trim: true},
     meta:               Schema.Types.Mixed,
     location:           { type: [], index: '2d'},
-    device:             { type: ObjectId, ref: 'Device' }
+    device:             { type: ObjectId, required: true, ref: 'Device' }
 })
 
 /**
@@ -36,5 +38,7 @@ SensorSchema.pre('save', function(next) {
 
 SensorSchema.methods = {
 }
+
+SensorSchema.statics.paginate = paginate;
 
 mongoose.model('Sensor', SensorSchema)

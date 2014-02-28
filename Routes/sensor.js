@@ -11,8 +11,8 @@ function validateClient(req, res, next) {
 };
 
 module.exports = function (server, config) {
-  var resource_base_url = '/device',
-      Resource = Device;
+  var resource_base_url = '/sensor',
+      Resource = Sensor;
 
   function _header_next(req, res, next) {
     var header_link = "",
@@ -59,18 +59,6 @@ module.exports = function (server, config) {
       return next();
     });
   });
-
-  server.get(resource_base_url + '/:id/sensors', validateClient, function (req, res, next) {
-    Sensor.paginate({device: req.params.id}, req.page, req.results_per_page, function (err, page_count, resources) {
-      if (err)
-        return next(err);
-
-      req.page_count = page_count;
-      req.resource_base_url = resource_base_url + '/' + req.params.id + '/sensors';
-      req.resources = resources;
-      return next();
-    });
-  }, _header_next);
 
   server.post(resource_base_url, validateClient, function (req, res, next) {
     Resource.create(req.body, function (err, new_resource) {

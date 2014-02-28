@@ -27,7 +27,7 @@ var log = new Logger({
     },
     {
       path: '/tmp/restify.log',
-      level: 'trace'
+      level: 'info'
     }
   ],
   serializers: {
@@ -135,8 +135,11 @@ server.pre(function(req, res, next) {
 
 restifyOAuth2.cc(server, { tokenEndpoint: "/token", hooks: require("./lib/oauth-hooks") });
 
-require(routes_path + '/oauth')(server, config);
-require(routes_path + '/device')(server, config);
+// Bootstrap models
+fs.readdirSync(routes_path).forEach(function (file) {
+  log.debug("Attaching route " + file);
+  require(routes_path + '/' +file)(server, config, influx_client);
+});
 
 
 server.get('/', function (req, res) {

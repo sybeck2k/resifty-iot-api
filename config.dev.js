@@ -4,7 +4,7 @@
 module.exports = {
   root: require('path').normalize(__dirname),
   app: {
-    name: 'restify-oauth2-mongoDB'
+    name: 'iot-api'
   },
   host: 'localhost',
   port: '9090',
