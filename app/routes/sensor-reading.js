@@ -41,7 +41,7 @@ module.exports = function (server, config, influx_client) {
       if (err)
         return next(err);
       req.sensor = resource;
-      req.series_name = "sensor_" + resource.id;
+      req.series_name = "sensor_" + resource._id;
       return next();
     });
   }

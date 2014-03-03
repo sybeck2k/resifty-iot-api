@@ -1,37 +1,51 @@
 {
-    "name": "mwt-iot",
-    "description": "A real-time API server for the Internet of Thingss",
-    "keywords": ["restify", "iot", "api"],
-    "version": "0.0.1",
-    "author": "Roberto Migli",
-    "main": "server.js",
-    "private": true,
-    "engines": {
-        "node": "0.10.x"
-    }, 
-    "dependencies": {
-        "restify" : "2.5.x",
-        "restify-oauth2" : "2.x",
-        "mongoose": "3.6.x",
-        "bcrypt" : "0.7.5",
-        "mongoose-validator" : "0.2.x",
-        "redis" : "0.8.x",
-        "bunyan": "0.22.x",
-        "influx": "0.2.x"
-    },
-    "devDependencies": {
-        "grunt": "~0.4.2",
-        "grunt-contrib-jshint": "~0.8.0",
-        "grunt-contrib-watch": "~0.5.3",
-        "grunt-contrib-clean": "~0.5.0",
-        "grunt-contrib-copy": "~0.5.0",
-        "grunt-mocha-test": "~0.9.0",
-        "grunt-nodemon": "~0.2.0",
-        "grunt-concurrent": "~0.4.3",
-        "grunt-istanbul": "~0.2.4",
-        "grunt-env": "~0.4.1",
-        "should": "~3.1.2",
-        "nock": "~0.27.2",
-        "supertest": "~0.9.0"
+  "name": "mwt-iot",
+  "description": "A real-time API server for the Internet of Thingss",
+  "keywords": [
+    "restify",
+    "iot",
+    "api"
+  ],
+  "version": "0.0.1",
+  "author": "Roberto Migli",
+  "main": "index.js",
+  "private": true,
+  "engines": {
+    "node": "0.10.x"
+  },
+  "config": {
+    "blanket": {
+      "pattern": [
+        "app"
+      ]
     }
+  },
+  "scripts": {
+    "test": "grunt test"
+  },
+  "dependencies": {
+    "restify": "2.5.x",
+    "restify-oauth2": "2.x",
+    "mongoose": "3.6.x",
+    "bcrypt": "0.7.5",
+    "mongoose-validator": "0.2.x",
+    "redis": "0.8.x",
+    "bunyan": "0.22.x",
+    "influx": "0.2.x",
+    "mosca": "^0.17.4"
+  },
+  "devDependencies": {
+    "grunt": "~0.4.2",
+    "grunt-contrib-jshint": "~0.8.0",
+    "grunt-contrib-watch": "~0.5.3",
+    "grunt-contrib-clean": "~0.5.0",
+    "grunt-contrib-copy": "~0.5.0",
+    "grunt-nodemon": "~0.2.0",
+    "grunt-concurrent": "~0.4.3",
+    "grunt-env": "~0.4.1",
+    "should": "~3.1.2",
+    "nock": "~0.27.2",
+    "supertest": "~0.9.0",
+    "grunt-mocha-cov": "^0.2.1"
+  }
 }

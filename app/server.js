@@ -5,37 +5,17 @@
  */
 var restify           = require("restify");
 var restifyOAuth2     = require("restify-oauth2");
-var mongoose          = require('mongoose');
 var fs                = require('fs');
 var influx            = require('influx');
 var url               = require("url");
 
 // Paths
-var models_path = require('path').normalize(__dirname) + '/models';
+
 var routes_path = require('path').normalize(__dirname) + '/routes';
 
-var api_server;
-
-function start(config, log) {
-  var db            = mongoose.connection;
+module.exports = function(config, log) {
+  // get the Oauth hooks
   var oauth_methods = require("./lib/oauth-hooks")(config, log);
-
-  // Connect to MongoDB
-  mongoose.connect(config.db_url);
-
-  db.on('error', log.error.bind(console, 'connection error:'));
-  db.once('open', function callback () {
-    log.info("Database connection opened.");
-  });
-
-  // Bootstrap models
-  fs.readdirSync(models_path).forEach(function (file) {
-    log.debug("Loading model " + file);
-    require(models_path + '/' +file);
-  });
-
-  
-  //return;
 
   //connect to Influx DB
   var influx_client = influx(config.influx_db.host,  config.influx_db.port,
@@ -52,7 +32,7 @@ function start(config, log) {
     }
   });
 
-  api_server = restify.createServer({
+  var api_server = restify.createServer({
     name: "Example Restify-OAuth2 Resource Owner Password Credentials Server",
     version: require("../package.json").version,
     log: log,
@@ -121,7 +101,14 @@ function start(config, log) {
 
   restifyOAuth2.cc(api_server, { tokenEndpoint: "/token", hooks: oauth_methods });
 
-  // Bootstrap models
+  // acrivate the MQTT server also
+  var mosca_server = require('./mqtt_server')(config, log);
+
+  api_server.on('close', function(){
+    mosca_server.close();
+  });
+
+  // Bootstrap routes
   fs.readdirSync(routes_path).forEach(function (file) {
     log.debug("Attaching route " + file);
     require(routes_path + '/' +file)(api_server, config, influx_client);
@@ -141,16 +128,11 @@ function start(config, log) {
       "token-types": "bearer"
     };
     
-
-    res.contentType = "application/hal+json";
     res.send(response);
   });
 
-  var port = config.port;
+  api_server.listen(config.port);
+  log.info("API server listening on port " + config.port);
 
-  log.info("API server listening on port " + port);
-  api_server.listen(port);
-}
-
-exports.start = start;
-exports.api_server = api_server;
+  return api_server;
+};

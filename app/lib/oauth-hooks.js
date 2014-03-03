@@ -86,11 +86,11 @@ hooks.authenticateToken = function (token, cb)  {
 
 module.exports = function(config, log){
   // Connect Redis connection
-  redisClient     = redis.createClient(null, config.redis_url, null);
+  redisClient = redis.createClient(null, config.redis_url, null);
 
   redisClient.on("error", function (err) {
     log.error("Error " + err);
   });
 
   return hooks;
-}
+};
