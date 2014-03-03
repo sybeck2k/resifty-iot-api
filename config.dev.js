@@ -24,4 +24,4 @@ module.exports = {
   session_timeout: 20 * 60 * 10, // defaults to 20 minutes, in ms (20 * 60 * 1000)
   socket_loglevel: '1', // 0 - error, 1 - warn, 2 - info, 3 - debug
   version: '1.0.0'
-}
+};

@@ -10,13 +10,15 @@ var fs                = require('fs');
 var Logger            = require('bunyan');
 var influx            = require('influx');
 var url               = require("url");
+var oauth_methods     = require("./lib/oauth-hooks");
+
 // Load configurations
 var env     = process.env.NODE_ENV || 'dev';
 var config  = require('./config.'+ env);
 
 // Paths
-var models_path = config.root + '/Models'
-var routes_path = config.root + '/Routes' 
+var models_path = config.root + '/models';
+var routes_path = config.root + '/routes';
 
 var log = new Logger({
   name: 'restify-iot',
@@ -52,7 +54,7 @@ fs.readdirSync(models_path).forEach(function (file) {
 
 
 //connect to Influx DB
-var influx_client = influx(config.influx_db.host,  config.influx_db.port, 
+var influx_client = influx(config.influx_db.host,  config.influx_db.port,
   config.influx_db.username,  config.influx_db.password, config.influx_db.database);
 
 influx_client.getDatabaseNames(function(err, database_names){
@@ -68,7 +70,7 @@ influx_client.getDatabaseNames(function(err, database_names){
 var server = restify.createServer({
   name: "Example Restify-OAuth2 Resource Owner Password Credentials Server",
   version: require("./package.json").version,
-  log: log, 
+  log: log,
   formatters: {
     'application/json': function(req, res, body) {
       if (body instanceof Error) {
@@ -117,8 +119,8 @@ server.pre(function(req, res, next) {
   }
   var query = url.parse(req.url,true).query;
 
-  var requst_pagination_page_number = 'page' in query ? parseInt(query['page']) : 1,
-      requst_pagination_per_page    = 'per_page' in query ? parseInt(query['per_page']) : config.pagination.results_per_page;
+  var requst_pagination_page_number = 'page' in query ? parseInt(query.page) : 1,
+      requst_pagination_per_page    = 'per_page' in query ? parseInt(query.per_page) : config.pagination.results_per_page;
 
   if (requst_pagination_page_number === 0 ) {
     return next(new restify.InvalidArgumentError("Pages must be 1-indexed"));
@@ -133,7 +135,7 @@ server.pre(function(req, res, next) {
   return next();
 });
 
-restifyOAuth2.cc(server, { tokenEndpoint: "/token", hooks: require("./lib/oauth-hooks") });
+restifyOAuth2.cc(server, { tokenEndpoint: "/token", hooks: oauth_methods });
 
 // Bootstrap models
 fs.readdirSync(routes_path).forEach(function (file) {
@@ -161,6 +163,7 @@ server.get('/', function (req, res) {
 });
 
 var port = config.port;
-    server.listen(port);
+
+server.listen(port);
 
 module.exports = server;
