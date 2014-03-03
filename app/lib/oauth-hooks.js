@@ -1,23 +1,12 @@
 "use strict";
 
-var mongoose    = require('mongoose');
-var crypto      = require("crypto");
-var Client      = mongoose.model('ClientKey');
-var Token       = mongoose.model('ClientToken');
-var User        = mongoose.model('User');
-
-// Load configurations
-var env     = process.env.NODE_ENV || 'dev';
-var config  = require('../config.' + env);
-
-// Connect Redis connection
-var redis           = require('redis');
-var redisClient     = redis.createClient(null, config.redis_url, null);
-
-
-redisClient.on("error", function (err) {
-  console.log("Error " + err);
-});
+var mongoose  = require('mongoose');
+var crypto    = require("crypto");
+var Client    = mongoose.model('ClientKey');
+var Token     = mongoose.model('ClientToken');
+var redis     = require('redis');
+var hooks     = {};
+var logger, redisClient;
 
 function generateToken(data)  {
   var random          = Math.floor(Math.random() * 100001);
@@ -27,7 +16,7 @@ function generateToken(data)  {
   return sha256.update(data).digest("base64");
 }
 
-exports.validateClient = function (clientId, clientSecret, cb) {
+hooks.validateClient = function (clientId, clientSecret, cb) {
   // Call back with `true` to signal that the client is valid, and `false` otherwise.
   // Call back with an error if you encounter an internal server error situation while trying to validate.
   Client.findOne({ client: clientId, secret: clientSecret }, function (err, client) {
@@ -43,7 +32,7 @@ exports.validateClient = function (clientId, clientSecret, cb) {
   });
 };
 
-exports.grantClientToken = function (clientId, clientSecret, cb)  {
+hooks.grantClientToken = function (clientId, clientSecret, cb)  {
   Client.where( 'clientId', new RegExp('^' + clientId + '$', 'i') ).findOne(function (err, client) {
     if (err) {
       cb(null, false);
@@ -68,7 +57,7 @@ exports.grantClientToken = function (clientId, clientSecret, cb)  {
   });
 };
 
-exports.authenticateToken = function (token, cb)  {
+hooks.authenticateToken = function (token, cb)  {
   // Query the Redis store for the Auth Token 
   redisClient.get(token, function (err, reply) {
     /* 
@@ -94,3 +83,14 @@ exports.authenticateToken = function (token, cb)  {
     }
   });
 };
+
+module.exports = function(config, log){
+  // Connect Redis connection
+  redisClient     = redis.createClient(null, config.redis_url, null);
+
+  redisClient.on("error", function (err) {
+    log.error("Error " + err);
+  });
+
+  return hooks;
+}

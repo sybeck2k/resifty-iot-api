@@ -22,5 +22,5 @@ if (cluster.isMaster) {
   /*
    * Start a new server on a new thread
    */
-  require('./server.js');
+  require('./app/server.js');
 }

@@ -2,7 +2,6 @@
  * Environment dependent configuration properties
  */
 module.exports = {
-  root: require('path').normalize(__dirname),
   app: {
     name: 'iot-api'
   },
