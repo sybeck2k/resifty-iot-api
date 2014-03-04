@@ -3,35 +3,11 @@ var restify         = require('restify');
 var Device          = mongoose.model('Device');
 var Sensor          = mongoose.model('Sensor');
 
-function validateClient(req, res, next) {
-  if (!req.clientId) {
-    return res.sendUnauthorized();
-  }
-  next();
-}
 
 module.exports = function (server, config, influx_client) {
   var resource_base_url = '/sensor-reading/:sensor_id',
-      Resource = Sensor;
-
-  function _header_next(req, res, next) {
-    var header_link = "",
-        fullURL = (req.isSecure() ? 'https':'http') + "://" + req.header('host') +
-         (req.resource_base_url ? req.resource_base_url : resource_base_url) +
-         '?per_page=' + req.results_per_page;
-
-    header_link += '<' + fullURL + '&page=1>; rel="first"';
-    header_link += ',<' + fullURL + '&page='+ req.page_count +'>; rel="last"';
-
-    if (req.page_count > req.page) {
-      header_link += ',<' + fullURL + '&page='+ (req.page +1) + '>; rel="next"';
-    }
-    if (req.page_count > 1) {
-      header_link += ',<' + fullURL + '&page='+ (req.page -1) +'>; rel="prev"';
-    }
-    res.setHeader('Link', header_link);
-    res.send(req.resources);
-  }
+      Resource = Sensor,
+      route_utils = require('../lib/route-utils');
 
   function validateSensor(req, res, next) {
     if (!req.params.sensor_id.match(/^[0-9a-fA-F]{24}$/)) {
@@ -46,7 +22,7 @@ module.exports = function (server, config, influx_client) {
     });
   }
 
-  server.post(resource_base_url, validateClient, validateSensor, function (req, res, next) {
+  server.post(resource_base_url, route_utils.validateClient, validateSensor, function (req, res, next) {
     if (req.sensor.persistant) {
       var point = { attr : req.body.value, time : new Date()};
       influx_client.writePoint(req.series_name, point, {time_precision: 'm'}, function (err, new_point){

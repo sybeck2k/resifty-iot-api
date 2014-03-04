@@ -11,7 +11,7 @@ var restify     = require('restify');
  */
 var TokenSchema = new Schema({
   id:         ObjectId,
-  clientId:   { type: String, trim: true, required: true },
+  clientId:   { type: ObjectId, required: true, ref: 'ClientKey' },
   token:      { type: String, trim: true, required: true }
 });
 
@@ -20,6 +20,7 @@ var TokenSchema = new Schema({
  * Pre-save hook
  */
 TokenSchema.pre('save', function(next) {
+  next();
 });
 
 /**

@@ -20,6 +20,7 @@ var ClientSchema = new Schema({
  * Pre-save hook
  */
 ClientSchema.pre('save', function(next) {
+  next();
 });
 
 /**

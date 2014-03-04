@@ -16,7 +16,23 @@ var DeviceSchema = new Schema({
   name:               { type: String, trim: true, required: true },
   description:        { type: String, trim: true},
   meta:               Schema.Types.Mixed,
-  location:           { type: [], index: '2d'}
+  location:           { type: [], index: '2d'},
+  parent:             { type: ObjectId, required: false, ref: 'Device' },
+  client:             { type: ObjectId, required: false, ref: 'ClientKey' }
+});
+
+DeviceSchema.set('toJSON', {
+  transform: function(doc, ret, options) {
+    var retJson = {
+      id:          ret._id,
+      name:        ret.name,
+      description: ret.description,
+      meta:        ret.meta,
+      location:    ret.location,
+      parent:      ret.parent
+    };
+    return retJson;
+  }
 });
 
 /**

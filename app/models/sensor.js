@@ -18,7 +18,22 @@ var SensorSchema = new Schema({
   description:        { type: String, trim: true},
   meta:               Schema.Types.Mixed,
   location:           { type: [], index: '2d'},
-  device:             { type: ObjectId, required: true, ref: 'Device' }
+  device:             { type: ObjectId, required: true, ref: 'Device' },
+  client:             { type: ObjectId, required: false, ref: 'ClientKey' }
+});
+
+SensorSchema.set('toJSON', {
+  transform: function(doc, ret, options) {
+    var retJson = {
+      id:          ret._id,
+      name:        ret.name,
+      description: ret.description,
+      meta:        ret.meta,
+      location:    ret.location,
+      device:      ret.device
+    };
+    return retJson;
+  }
 });
 
 /**
@@ -29,7 +44,8 @@ var SensorSchema = new Schema({
  * Pre-save hook
  */
 SensorSchema.pre('save', function(next) {
-  next();
+  throw new Error("@todo consistency with device!");
+  //next();
 });
 
 /**

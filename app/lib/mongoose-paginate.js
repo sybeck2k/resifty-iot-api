@@ -7,6 +7,7 @@ var mongoose = require('mongoose');
 /**
  * @method paginate
  * @param {Object} query Mongoose Query Object
+ * @param {Object} populate Mongoose Populate Object
  * @param {Number} pageNumber 
  * @param {Number} resultsPerPage
  * Extend Mongoose Models to paginate queries
@@ -18,16 +19,20 @@ module.exports = function(q, pageNumber, resultsPerPage, callback, options) {
 
   var model = this,
       columns = options.columns || null,
+      populate = options.populate || null,
       sortBy = options.sortBy || {_id:1},
       skipFrom = (pageNumber * resultsPerPage) - resultsPerPage,
       query;
 
-  if(columns == null){
-    query = model.find(q).skip(skipFrom).limit(resultsPerPage).sort(sortBy);
-  }else{
-    query = model.find(q).select(options.columns).skip(skipFrom).limit(resultsPerPage).sort(sortBy);
+  query = model.find(q);
+  if(columns !== null){
+    query = query.select(options.columns);
+  }
+  if(populate !== null){
+    query = query.populate(options.populate);
   }
 
+  query = query.skip(skipFrom).limit(resultsPerPage).sort(sortBy);
   query.exec(function(error, results) {
     if (error) {
       callback(error, null, null);

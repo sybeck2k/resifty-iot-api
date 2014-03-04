@@ -52,7 +52,7 @@ module.exports = function(config, log) {
 
   // fired when a message is published
   server.on('published', function(packet, client) {
-    log.info('Published', packet.payload);
+    log.debug('Published payload', packet.payload);
   });
 
   return server;

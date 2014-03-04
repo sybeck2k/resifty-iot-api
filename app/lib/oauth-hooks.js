@@ -11,7 +11,7 @@ var logger, redisClient;
 function generateToken(data)  {
   var random          = Math.floor(Math.random() * 100001);
   var timestamp       = (new Date()).getTime();
-  var sha256          = crypto.createHmac("sha256", random + "WOO" + timestamp);
+  var sha256          = crypto.createHmac("sha256", random + "WOOT" + timestamp);
 
   return sha256.update(data).digest("base64");
 }
@@ -33,24 +33,22 @@ hooks.validateClient = function (clientId, clientSecret, cb) {
 };
 
 hooks.grantClientToken = function (clientId, clientSecret, cb)  {
-  Client.where( 'clientId', new RegExp('^' + clientId + '$', 'i') ).findOne(function (err, client) {
+  Client.where( 'client', new RegExp('^' + clientId + '$', 'i') ).findOne(function (err, client) {
     if (err) {
       cb(null, false);
     } else if (!client) {
       cb(null, false);
     } else if (client.authenticate(clientSecret)) {
-      // If the user authenticates, generate a token for them and store it to the database so
-      // we can look it up later.
-
-      var token       = generateToken(clientSecret + ":" + clientSecret);
-      var newToken    = new Token({ clientId: clientId, token: token });
-      newToken.save();
-
-      // Store the token in the Redis datastore so we can perform fast queries on it
-      redisClient.set(token, clientId);
-
-      // Call back with the token so Restify-OAuth2 can pass it on to the client.
-      return cb(null, token);
+      logger.debug(client);
+      var token       = generateToken(clientId + ":" + clientSecret);
+      Token.create({ clientId: client._id, token: token }, function (err, newToken) {
+        if (err)
+          throw new Error("Impossible to persist new Token");
+        // Store the token in the Redis datastore so we can perform fast queries on it
+        redisClient.set(token, client._id);
+        // Call back with the token so Restify-OAuth2 can pass it on to the client.
+        return cb(null, token);
+      });
     } else {
       cb(null, false);
     }
@@ -66,6 +64,7 @@ hooks.authenticateToken = function (token, cb)  {
      */
     if(err || reply === null){
       Token.findOne({ token: token }, function (err, authToken) {
+        logger.warn(err, authToken);
         if(err){
           cb(null, false);
         }else {
@@ -92,5 +91,6 @@ module.exports = function(config, log){
     log.error("Error " + err);
   });
 
+  logger = log;
   return hooks;
 };

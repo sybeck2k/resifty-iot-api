@@ -4,8 +4,7 @@ module.exports = function (grunt) {
   grunt.initConfig({
     jshint: {
       options: {
-        jshintrc: '.jshintrc',
-        ignores: ['test/coverage/**/*.js','node_modules/**/*']
+        jshintrc: '.jshintrc'
       },
       files: {
         src: ['app/**/*.js']
@@ -21,8 +20,8 @@ module.exports = function (grunt) {
         tasks: 'jshint'
       },
       test: {
-        files: ['test/unit/*.js'],
-        tasks: ['jshint', 'mochaTest:unit']
+        files: ['test/**/*.js'],
+        tasks: ['mochacov:test']
       }
     },
 
@@ -45,6 +44,9 @@ module.exports = function (grunt) {
     },
 
     mochacov: {
+      options: {
+        files: 'test/specs/**/*.js'
+      },
       coverage: {
         options: {
           reporter: 'html-cov'
@@ -52,10 +54,10 @@ module.exports = function (grunt) {
       },
       test: {
         options: {
-          reporter: 'spec'
+          reporter: 'spec',
+          require: ['test/init.js', 'should']
         }
-      },
-      all: ['test/*.js']
+      }
     },
 
     clean: {
