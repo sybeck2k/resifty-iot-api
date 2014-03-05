@@ -6,7 +6,6 @@
 var restify           = require("restify");
 var restifyOAuth2     = require("restify-oauth2");
 var fs                = require('fs');
-var influx            = require('influx');
 var url               = require("url");
 
 // Paths
@@ -16,20 +15,13 @@ var routes_path = require('path').normalize(__dirname) + '/routes';
 module.exports = function(config, log) {
   // get the Oauth hooks
   var oauth_methods = require("./lib/oauth-hooks")(config, log);
+  // get the driver for the sensor readings storage
+  var sensor_reading_driver = require(config.sensor_storage.driver)(config, log);
 
-  //connect to Influx DB
-  var influx_client = influx(config.influx_db.host,  config.influx_db.port,
-    config.influx_db.username,  config.influx_db.password, config.influx_db.database);
-
-  influx_client.getDatabaseNames(function(err, database_names){
-    if(err) throw err;
-    if (database_names.indexOf(config.influx_db.database) === -1) {
-      influx_client.createDatabase(config.influx_db.database, function(err) {
-        if(err)
-          throw err;
-        log.info('Created Infulx database');
-      });
-    }
+  // initialize the driver of the sensor readings storage
+  sensor_reading_driver.init(function(err, driver){
+    if (err) 
+      throw err;
   });
 
   var api_server = restify.createServer({
@@ -102,16 +94,16 @@ module.exports = function(config, log) {
   restifyOAuth2.cc(api_server, { tokenEndpoint: "/token", hooks: oauth_methods });
 
   // acrivate the MQTT server also
-  var mosca_server = require('./mqtt_server')(config, log);
+  var pubsub_server = require(config.pubsub_server.driver)(config, log);
 
   api_server.on('close', function(){
-    mosca_server.close();
+    pubsub_server.close();
   });
 
   // Bootstrap routes
   fs.readdirSync(routes_path).forEach(function (file) {
     log.debug("Attaching route " + file);
-    require(routes_path + '/' +file)(api_server, config, influx_client);
+    require(routes_path + '/' +file)(api_server, config, sensor_reading_driver, pubsub_server);
   });
 
 

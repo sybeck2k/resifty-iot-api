@@ -1,16 +1,16 @@
 var mosca = require('mosca');
 
 module.exports = function(config, log) {
-  var oauth_methods = require("./lib/oauth-hooks")(config, log);
+  var oauth_methods = require("../oauth-hooks")(config, log);
 
   var ascoltatore = {
     type: 'redis',
-    port: 6379,
-    host: 'localhost'
+    port: config.pubsub_server.redis_port,
+    host: config.pubsub_server.redis_host
   };
 
   var settings = {
-    port: 1883,
+    port:  config.pubsub_server.port,
     backend: ascoltatore
   };
 
@@ -44,7 +44,7 @@ module.exports = function(config, log) {
     server.authenticate = authenticate;
     server.authorizePublish = authorizePublish;
     server.authorizeSubscribe = authorizeSubscribe;
-    log.info('Mosca server is up and running');
+    log.info("MQTT server listening on port " + settings.port);
   }
 
   var server = new mosca.Server(settings);

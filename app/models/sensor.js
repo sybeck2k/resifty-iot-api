@@ -17,6 +17,7 @@ var SensorSchema = new Schema({
   persistant:         { type: Boolean, default: true },
   description:        { type: String, trim: true},
   meta:               Schema.Types.Mixed,
+  type:               { type: String, enum: ['geo', 'scalar', 'state'], default: 'scalar' },
   location:           { type: [], index: '2d'},
   device:             { type: ObjectId, required: true, ref: 'Device' },
   client:             { type: ObjectId, required: false, ref: 'ClientKey' }
@@ -30,7 +31,9 @@ SensorSchema.set('toJSON', {
       description: ret.description,
       meta:        ret.meta,
       location:    ret.location,
-      device:      ret.device
+      device:      ret.device,
+      type:        ret.type,
+      persistant:  ret.persistant
     };
     return retJson;
   }
@@ -44,8 +47,8 @@ SensorSchema.set('toJSON', {
  * Pre-save hook
  */
 SensorSchema.pre('save', function(next) {
-  throw new Error("@todo consistency with device!");
-  //next();
+  //throw new Error("@todo consistency with device!");
+  next();
 });
 
 /**
