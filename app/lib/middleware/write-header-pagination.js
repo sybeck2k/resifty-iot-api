@@ -1,7 +1,9 @@
-var restify         = require('restify');
+"use strict";
 
-// A middleware to help paginate results in API GET methods
-exports.header_next = function(req, res, next) {
+// Paginate results in API GET methods
+// requires that req.resource_base_url (the base address of the request), 
+// req.page_count (the total page count) and req.page (the current page) are set
+module.exports = function(req, res, next) {
   if (!req.resource_base_url || !req.page_count || !req.page) {
     throw new Error("Missing required parameters");
   }
@@ -22,12 +24,4 @@ exports.header_next = function(req, res, next) {
   }
   res.setHeader('Link', header_link);
   res.send(req.resources);
-};
-
-// Middleware to Validate a mongo standard ObjectId
-exports.validateObjectId = function(req, res, next) {
-  if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-    return next(new restify.InvalidArgumentError());
-  }
-  return next();
 };

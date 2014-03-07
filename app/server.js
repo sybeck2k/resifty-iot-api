@@ -1,8 +1,5 @@
 "use strict";
 
-/*
- * Main Imports
- */
 var restify           = require("restify");
 var restifyOAuth2     = require("restify-oauth2");
 var fs                = require('fs');
@@ -20,7 +17,7 @@ module.exports = function(config, log) {
 
   // initialize the driver of the sensor readings storage
   sensor_reading_driver.init(function(err, driver){
-    if (err) 
+    if (err)
       throw err;
   });
 
@@ -61,40 +58,18 @@ module.exports = function(config, log) {
     }
   });
 
-  // Setup the Restify Server with Oauth2
+
   api_server.use(restify.authorizationParser());
   api_server.use(restify.bodyParser({ mapParams: false }));
-  //server.use(restify.queryParser({ mapParams: false }));
   api_server.pre(restify.pre.sanitizePath());
+  api_server.pre(require("./lib/middleware/parse-pagination")(config));
 
-  // get pagination info
-  api_server.pre(function(req, res, next) {
-    //pagination makes sense only on `get` requests!
-    if (req.method !== 'GET') {
-      return next();
-    }
-    var query = url.parse(req.url,true).query;
+  restifyOAuth2.cc(api_server, { tokenEndpoint: "/token", hooks: oauth_methods, reqPropertyName: 'client_data' });
 
-    var requst_pagination_page_number = 'page' in query ? parseInt(query.page) : 1,
-        requst_pagination_per_page    = 'per_page' in query ? parseInt(query.per_page) : config.pagination.results_per_page;
-
-    if (requst_pagination_page_number === 0 ) {
-      return next(new restify.InvalidArgumentError("Pages must be 1-indexed"));
-    }
-
-    if (requst_pagination_per_page > config.pagination.max_results) {
-      requst_pagination_per_page = config.pagination.max_results;
-    }
-    req.results_per_page = requst_pagination_per_page;
-    req.page = requst_pagination_page_number;
-
-    return next();
-  });
-
-  restifyOAuth2.cc(api_server, { tokenEndpoint: "/token", hooks: oauth_methods });
-
-  // acrivate the MQTT server also
+  // initialize the Pub/Sub server
   var pubsub_server = require(config.pubsub_server.driver)(config, log);
+
+  pubsub_server.attach(api_server);
 
   api_server.on('close', function(){
     pubsub_server.close();
@@ -105,7 +80,6 @@ module.exports = function(config, log) {
     log.debug("Attaching route " + file);
     require(routes_path + '/' +file)(api_server, config, sensor_reading_driver, pubsub_server);
   });
-
 
   api_server.get('/', function (req, res) {
     var response = {

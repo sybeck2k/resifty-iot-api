@@ -12,7 +12,20 @@ var restify     = require('restify');
 var TokenSchema = new Schema({
   id:         ObjectId,
   clientId:   { type: ObjectId, required: true, ref: 'ClientKey' },
-  token:      { type: String, trim: true, required: true }
+  token:      { type: String, trim: true, required: true },
+  scope:      { type: []}
+});
+
+TokenSchema.set('toJSON', {
+  transform: function(doc, ret, options) {
+    var retJson = {
+      id:          ret._id,
+      clientId:    ret.clientId,
+      token:       ret.token,
+      scope:       ret.scope
+    };
+    return retJson;
+  }
 });
 
 

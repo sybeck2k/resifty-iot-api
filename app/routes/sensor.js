@@ -1,3 +1,5 @@
+"use strict";
+
 var mongoose        = require('mongoose');
 var restify         = require('restify');
 var Device          = mongoose.model('Device');
@@ -7,10 +9,12 @@ var extend          = require('util')._extend;
 module.exports = function (server, config) {
   var resource_base_url = '/sensor',
       Resource = Sensor,
-      route_utils = require('../lib/route-utils');
-
-  server.get(resource_base_url, route_utils.validateClient, function (req, res, next) {
-    Resource.paginate({client: req.clientId}, req.page, req.results_per_page, function (err, page_count, resources) {
+      validateClient = require('../lib/middleware/validate-client'),
+      validateObjectId = require('../lib/middleware/validate-objectId'),
+      headerPagination = require('../lib/middleware/write-header-pagination');
+      
+  server.get(resource_base_url, validateClient, function (req, res, next) {
+    Resource.paginate({client: req.client_data.clientId}, req.page, req.results_per_page, function (err, page_count, resources) {
       if (err)
         return next(err);
 
@@ -19,10 +23,10 @@ module.exports = function (server, config) {
       req.resource_base_url = resource_base_url;
       return next();
     });
-  }, route_utils.header_next);
+  }, headerPagination);
 
-  server.get(resource_base_url + '/:id', route_utils.validateClient, route_utils.validateObjectId, function (req, res, next) {
-    Resource.findOne({_id: req.params.id, client: req.clientId}, function(err, resource){
+  server.get(resource_base_url + '/:id', validateClient, validateObjectId, function (req, res, next) {
+    Resource.findOne({_id: req.params.id, client: req.client_data.clientId}, function(err, resource){
       if (err)
         return next(err);
       if (!resource)
@@ -33,8 +37,8 @@ module.exports = function (server, config) {
     });
   });
 
-  server.post(resource_base_url, route_utils.validateClient, function (req, res, next) {
-    Resource.create(extend(req.body, {client: req.clientId}), function (err, new_resource) {
+  server.post(resource_base_url, validateClient, function (req, res, next) {
+    Resource.create(extend(req.body, {client: req.client_data.clientId}), function (err, new_resource) {
       if (err)
         return next(err);
       res.send(201, new_resource);
@@ -42,8 +46,8 @@ module.exports = function (server, config) {
     });
   });
 
-  server.patch(resource_base_url + '/:id', route_utils.validateClient, route_utils.validateObjectId, function (req, res, next) {
-    Resource.findOneAndUpdate({_id: req.params.id, client: req.clientId}, {$set: req.body}, {upsert: true, safe:true}).exec(function(err, resource) {
+  server.patch(resource_base_url + '/:id', validateClient, validateObjectId, function (req, res, next) {
+    Resource.findOneAndUpdate({_id: req.params.id, client: req.client_data.clientId}, {$set: req.body}, {upsert: true, safe:true}).exec(function(err, resource) {
       if (err)
         return next(err);
       res.send(resource);
@@ -51,8 +55,8 @@ module.exports = function (server, config) {
     });
   });
 
-  server.del(resource_base_url + '/:id', route_utils.validateClient, route_utils.validateObjectId, function (req, res, next) {
-    Resource.find({_id: req.params.id, client: req.clientId}).remove(function(err){
+  server.del(resource_base_url + '/:id', validateClient, validateObjectId, function (req, res, next) {
+    Resource.find({_id: req.params.id, client: req.client_data.clientId}).remove(function(err){
       if (err)
         return next(err);
       res.send(204);

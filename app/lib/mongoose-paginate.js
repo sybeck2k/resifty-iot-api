@@ -1,6 +1,4 @@
-/**
- * @list dependencies
- **/
+"use strict";
 
 var mongoose = require('mongoose');
 
@@ -12,7 +10,6 @@ var mongoose = require('mongoose');
  * @param {Number} resultsPerPage
  * Extend Mongoose Models to paginate queries
  **/
-
 module.exports = function(q, pageNumber, resultsPerPage, callback, options) {
   options = options || {};
   callback = callback || function(){};
