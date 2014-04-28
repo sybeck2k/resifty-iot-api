@@ -9,6 +9,7 @@ var numCPUs    = require('os').cpus().length;
 var Logger     = require('bunyan');
 var mongoose   = require('mongoose');
 var fs         = require('fs');
+var redis      = require('redis');
 
 var logger = new Logger({
     name: 'restify-iot',
@@ -43,6 +44,14 @@ fs.readdirSync(models_path).forEach(function (file) {
   require(models_path + '/' +file);
 });
 
+var redis_uri = require("url").parse(_config.redis_url);
+
+// Connect to Redis
+var redis_client = redis.createClient(redis_uri.port, redis_uri.hostname);
+if (redis_uri.auth) {
+  redis_client.auth(redis_uri.auth.split(":")[1]);
+}
+
 if (cluster.isMaster) {
   /*
    * Fork workers.
@@ -58,5 +67,5 @@ if (cluster.isMaster) {
   /*
    * Start a new server on a new thread
    */
-  require('./app/server')(config, logger);
+  require('./app/server')(config, logger, redis_client);
 }

@@ -62,19 +62,33 @@ module.exports = function(config, log) {
   api_server.use(restify.authorizationParser());
   api_server.use(restify.bodyParser({ mapParams: false }));
   api_server.pre(restify.pre.sanitizePath());
-  api_server.pre(require("./lib/middleware/parse-pagination")(config));
 
-  restifyOAuth2.cc(api_server, { tokenEndpoint: "/token", hooks: oauth_methods, reqPropertyName: 'client_data' });
+  //api_server.pre(require("./lib/middleware/parse-pagination")(config));
+
+  restifyOAuth2.cc(api_server, { tokenEndpoint: "/token", hooks: oauth_methods });
 
   // initialize the Pub/Sub server
   var pubsub_server = require(config.pubsub_server.driver)(config, log);
 
   pubsub_server.attach(api_server);
 
+  pubsub_server.getClient().subscribe('/chat/*', function(message) {
+    log.info('[' + message.user + ']: ' + message.message);
+  });
+
+  pubsub_server.on('subscribe', function(clientId, channel) {
+    log.info('[ SUBSCRIBE] ' + clientId + ' -> ' + channel);
+  });
+
   api_server.on('close', function(){
     pubsub_server.close();
   });
 
+  api_server.on('NotFound', function (request, response, cb) {
+    //@todo anything that gets here by the /pubsub path is actually handled by the pubsub server and thus is not a real 404!
+    
+  });
+  
   // Bootstrap routes
   fs.readdirSync(routes_path).forEach(function (file) {
     log.debug("Attaching route " + file);

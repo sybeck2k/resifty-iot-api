@@ -1,6 +1,6 @@
 {
   "name": "mwt-iot",
-  "description": "A real-time API server for the Internet of Thingss",
+  "description": "A real-time API server for the Internet of Things",
   "keywords": [
     "restify",
     "iot",
@@ -24,8 +24,8 @@
     "test": "grunt test"
   },
   "dependencies": {
-    "restify": "2.5.x",
-    "restify-oauth2": "https://github.com/sybeck2k/restify-oauth2/tarball/master",
+    "restify": "2.7.x",
+    "restify-oauth2": "4.x",
     "mongoose": "3.6.x",
     "bcrypt": "0.7.5",
     "mongoose-validator": "0.2.x",

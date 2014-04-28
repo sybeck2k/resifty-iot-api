@@ -25,5 +25,6 @@ module.exports = function(config, log, oauth_methods) {
     engine: engine
   });
 
+  log.info("Faye pubsub server mounted at /pubsub");
   return bayeux;
 };

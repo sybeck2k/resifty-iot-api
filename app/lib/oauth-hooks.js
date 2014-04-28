@@ -45,54 +45,49 @@ redis_utils.setTokenData = function(token) {
   });
 };
 
-// Validates a client
-hooks.validateClient = function (clientId, clientSecret, cb) {
-  // Call back with `true` to signal that the client is valid, and `false` otherwise.
-  // Call back with an error if you encounter an internal server error situation while trying to validate.
-  Client.findOne({ client: clientId, secret: clientSecret }, function (err, client) {
-    if(err){
-      cb(null, false);
-    }else {
-      if( client === null ) {
-        cb(null, false);
-      } else {
-        cb(null, true);
-      }
-    }
-  });
-};
-
-// Grants a token to the given ClientId and ClientSecret if they are valid
-// the scope variable is an array of comma-separated strings
-hooks.grantClientToken = function (clientId, clientSecret, scope, cb)  {
-  var scopes = scope ? scope.split(",") : [];
-  if (scopes.length === 0) {
-    return cb(new restify.InvalidArgumentError("The token must have at least one scope"), null);
-  }
-
-  Client.where( 'client', new RegExp('^' + clientId + '$', 'i') ).findOne(function (err, client) {
+// Grants a token to the given credentials.{clientId,clientSecret} if they are valid
+hooks.grantClientToken = function (credentials, req, cb)  {
+  Client.where( 'client', new RegExp('^' + credentials.clientId + '$', 'i') ).findOne(function (err, client) {
     if (err) {
       cb(null, false);
     } else if (!client) {
       cb(null, false);
-    } else if (client.authenticate(clientSecret)) {
-      var token       = generateToken(clientId + ":" + clientSecret);
-      Token.create({ clientId: client._id, token: token, scope: scopes }, function (err, newToken) {
-        if (err)
-          throw new Error("Impossible to persist new Token");
-        // Store the token in the Redis datastore so we can perform fast queries on it
-        redis_utils.setTokenData(newToken.toJSON());
-        // Call back with the token so Restify-OAuth2 can pass it on to the client.
-        return cb(null, token, scopes);
-      });
-    } else {
-      cb(null, false);
+    } else if (client.authenticate(credentials.clientSecret)) {
+      //store the mongodb ID of the client for reference when generating the token in the grantScopes func
+      req.clientObjId = client._id;
+      var token       = generateToken(credentials.clientId + ":" + credentials.clientSecret);
+      return cb(null, token);
     }
+    return cb(null, false);
   });
 };
 
+// Grants scopes to the given credentials.{clientId,clientSecret,token} if they are valid
+hooks.grantScopes = function (credentials, scopesRequested, req, cb) {
+  if (!req.clientObjId) {
+    throw new Error("Missing clientObjId parameter");
+  }
+  Token.create({ clientId: req.clientObjId, token: credentials.token, scope: scopesRequested }, function (err, newToken) {
+    if (err) {
+      logger.warn(credentials, err);
+      throw new Error("Impossible to persist new Token");
+    }
+      
+    // Store the token in the Redis datastore so we can perform fast queries on it
+    redis_utils.setTokenData(newToken.toJSON());
+    // Call back with the token so Restify-OAuth2 can pass it on to the client.
+    return cb(null, scopesRequested);
+  });
+
+  // Call back with the actual set of scopes granted.
+  //cb(null, scopesRequested);
+
+  // We could also call back with `false` to signal that the requested scopes are invalid, unknown, or mismatched with
+  // the given credentials. Or we could call back with an error for an internal server error situation.
+};
+
 // Authenticate a given token, uses redis as a cache server
-hooks.authenticateToken = function (token, cb)  {
+hooks.authenticateToken = function (token, req, cb)  {
   // Query the Redis store for the Auth Token 
   redis_utils.getTokenData(token, function (err, authToken) {
     /* 
@@ -109,24 +104,16 @@ hooks.authenticateToken = function (token, cb)  {
           } else {
             authToken = authToken.toJSON();
             redis_utils.setTokenData(authToken);
-            return cb(null, authToken);
+            req.credentials = authToken;
+            return cb(null, true);
           }
         }
       });
     } else {
-      // Return the token clientId
-      return cb(null, authToken);
+      req.credentials = authToken;
+      return cb(null, true);
     }
   });
-};
-
-// Authorize the given client for the given request using the scope parameter of the token
-hooks.authorizeToken = function (client_data, req, cb)  {
-  if (client_data.scope.indexOf('admin') !== -1) {
-    return cb(null, true);
-  }
-
-  return cb(null, false);
 };
 
 module.exports = function(_config, _logger){

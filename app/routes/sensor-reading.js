@@ -18,7 +18,7 @@ module.exports = function (server, config, sensor_reading_driver, mqtt_server) {
     if (!req.params.sensor_id.match(/^[0-9a-fA-F]{24}$/)) {
       return next(new restify.InvalidArgumentError());
     }
-    Resource.findOne({_id: req.params.sensor_id, client: req.clientId.clientId}, function(err, resource){
+    Resource.findOne({_id: req.params.sensor_id, client: req.credentials.clientId}, function(err, resource){
       if (err)
         return next(err);
       if (!resource) {

@@ -2,7 +2,8 @@
 
 // HTTP Middleware to verify that the current client is authorized
 module.exports = function(req, res, next) {
-  if (!req.client_data) {
+  
+  if (!req.credentials) {
     return res.sendUnauthorized();
   }
   next();

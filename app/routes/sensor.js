@@ -14,7 +14,7 @@ module.exports = function (server, config) {
       headerPagination = require('../lib/middleware/write-header-pagination');
       
   server.get(resource_base_url, validateClient, function (req, res, next) {
-    Resource.paginate({client: req.client_data.clientId}, req.page, req.results_per_page, function (err, page_count, resources) {
+    Resource.paginate({client: req.credentials.clientId}, req.page, req.results_per_page, function (err, page_count, resources) {
       if (err)
         return next(err);
 
@@ -26,7 +26,7 @@ module.exports = function (server, config) {
   }, headerPagination);
 
   server.get(resource_base_url + '/:id', validateClient, validateObjectId, function (req, res, next) {
-    Resource.findOne({_id: req.params.id, client: req.client_data.clientId}, function(err, resource){
+    Resource.findOne({_id: req.params.id, client: req.credentials.clientId}, function(err, resource){
       if (err)
         return next(err);
       if (!resource)
@@ -38,7 +38,7 @@ module.exports = function (server, config) {
   });
 
   server.post(resource_base_url, validateClient, function (req, res, next) {
-    Resource.create(extend(req.body, {client: req.client_data.clientId}), function (err, new_resource) {
+    Resource.create(extend(req.body, {client: req.credentials.clientId}), function (err, new_resource) {
       if (err)
         return next(err);
       res.send(201, new_resource);
@@ -47,7 +47,7 @@ module.exports = function (server, config) {
   });
 
   server.patch(resource_base_url + '/:id', validateClient, validateObjectId, function (req, res, next) {
-    Resource.findOneAndUpdate({_id: req.params.id, client: req.client_data.clientId}, {$set: req.body}, {upsert: true, safe:true}).exec(function(err, resource) {
+    Resource.findOneAndUpdate({_id: req.params.id, client: req.credentials.clientId}, {$set: req.body}, {upsert: true, safe:true}).exec(function(err, resource) {
       if (err)
         return next(err);
       res.send(resource);
@@ -56,7 +56,7 @@ module.exports = function (server, config) {
   });
 
   server.del(resource_base_url + '/:id', validateClient, validateObjectId, function (req, res, next) {
-    Resource.find({_id: req.params.id, client: req.client_data.clientId}).remove(function(err){
+    Resource.find({_id: req.params.id, client: req.credentials.clientId}).remove(function(err){
       if (err)
         return next(err);
       res.send(204);
