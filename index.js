@@ -1,3 +1,5 @@
+"use strict";
+
 var Logger     = require('bunyan');
 var mongoose   = require('mongoose');
 var fs         = require('fs');
@@ -9,10 +11,6 @@ var logger = new Logger({
     {
       stream: process.stdout,
       level: 'debug'
-    },
-    {
-      path: '/tmp/restify.log',
-      level: 'info'
     }
   ],
   serializers: {

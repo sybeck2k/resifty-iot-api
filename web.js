@@ -1,8 +1,5 @@
 "use strict";
 
-/*
- * Cluster Imports
- */
 var cluster    = require('cluster');
 var http       = require('http');
 var numCPUs    = require('os').cpus().length;
@@ -16,7 +13,7 @@ var logger = new Logger({
     streams: [
       {
         stream: process.stdout,
-        level: 'warn'
+        level: 'info'
       }
     ],
     serializers: {
@@ -44,9 +41,9 @@ fs.readdirSync(models_path).forEach(function (file) {
   require(models_path + '/' +file);
 });
 
-var redis_uri = require("url").parse(_config.redis_url);
+var redis_uri = require("url").parse(config.redis_url);
 
-// Connect to Redis
+// Connect Redis connection
 var redis_client = redis.createClient(redis_uri.port, redis_uri.hostname);
 if (redis_uri.auth) {
   redis_client.auth(redis_uri.auth.split(":")[1]);
@@ -57,6 +54,7 @@ if (cluster.isMaster) {
    * Fork workers.
    */
   for (var i = 0; i < numCPUs; i++) {
+    logger.info("Forking worker " + i);
     cluster.fork();
   }
 

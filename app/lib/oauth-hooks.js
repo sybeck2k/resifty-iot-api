@@ -8,7 +8,7 @@ var redis     = require('redis');
 var restify   = require('restify');
 var extend    = require('util')._extend;
 var hooks     = {};
-var logger, redisClient, redis_utils = {};
+var log, redisClient, redis_utils = {};
 
 
 function generateToken(data)  {
@@ -40,7 +40,7 @@ redis_utils.setTokenData = function(token) {
   token_clone.scope = token.scope.join(",");
   redisClient.hmset(token.token, token_clone, function(err){
     if (err) {
-      logger.warn("Impossible to persist token data in Redis: " + err);
+      log.warn("Impossible to persist token data in Redis: " + err);
     }
   });
 };
@@ -67,9 +67,10 @@ hooks.grantScopes = function (credentials, scopesRequested, req, cb) {
   if (!req.clientObjId) {
     throw new Error("Missing clientObjId parameter");
   }
+  
   Token.create({ clientId: req.clientObjId, token: credentials.token, scope: scopesRequested }, function (err, newToken) {
     if (err) {
-      logger.warn(credentials, err);
+      log.warn(credentials, err);
       throw new Error("Impossible to persist new Token");
     }
       
@@ -104,13 +105,17 @@ hooks.authenticateToken = function (token, req, cb)  {
           } else {
             authToken = authToken.toJSON();
             redis_utils.setTokenData(authToken);
-            req.credentials = authToken;
+            if (req) {
+              req.credentials = authToken;
+            }
             return cb(null, true);
           }
         }
       });
     } else {
-      req.credentials = authToken;
+      if (req) {
+        req.credentials = authToken;
+      }
       return cb(null, true);
     }
   });
@@ -125,7 +130,7 @@ module.exports = function(_config, _logger){
     redisClient.auth(rtg.auth.split(":")[1]);
   }
 
-  logger = _logger;
+  log =  _logger.child({component: 'oauth'});
   
   return hooks;
 };
