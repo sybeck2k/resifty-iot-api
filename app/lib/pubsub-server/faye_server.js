@@ -118,7 +118,7 @@ module.exports = function(config, _logger, oauth_methods) {
           log.debug('Accepting message on ', message.channel);
           //and dispatch /sensor-reading to a corresponding action
           var regexp_matches;
-          if (regexp_matches = message.channel.match(sensor_reading_route_regexp)) {
+          if (!!(regexp_matches = message.channel.match(sensor_reading_route_regexp))) {
             write_datapoint(regexp_matches[1], message);
           }
           cb(message);

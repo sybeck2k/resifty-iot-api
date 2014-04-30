@@ -78,17 +78,14 @@ module.exports = function(config, log) {
 
   //anything that gets here by the /pubsub path is actually handled by the pubsub server and thus is not a real 404!
   var rePubSubPattern = new RegExp(/^\/pubsub/);
-  api_server.on('NotFound', function (request, response, cb) {
-    if (!request.url.match(rePubSubPattern)) {
-      res.send(404, request.url + ' was not found');
+  api_server.on('NotFound', function (req, res, cb) {
+    if (!req.url.match(rePubSubPattern)) {
+      res.send(404, req.url + ' was not found');
     }
   });
   
   // Bootstrap routes
-  fs.readdirSync(routes_path).forEach(function (file) {
-    log.debug("Attaching route " + file);
-    require(routes_path + '/' +file)(api_server, config, sensor_reading_driver, pubsub_server);
-  });
+  require(routes_path + '/index')(api_server, config, sensor_reading_driver, pubsub_server);
 
   api_server.get('/', function (req, res) {
     var response = {

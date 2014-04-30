@@ -1,3 +1,5 @@
+"use strict";
+
 var influx            = require('influx');
 var driver = {},
     log, config, influx_client;
@@ -8,15 +10,15 @@ driver.init = function(cb) {
     config.sensor_storage.username,  config.sensor_storage.password, config.sensor_storage.database);
 
   influx_client.getDatabaseNames(function(err, database_names){
-    if (err)
-      return (err, null);
-    return (influx_client, null);
+
+    if (err) {
+      return cb(err, null);
+    }
+    return cb(null, influx_client);
   });
 };
 
-/*
-* 
-*/
+//add a new datapoint
 driver.create = function(sensor, points, cb) {
   var series_name = "sensor_" + sensor.id;
   influx_client.writePoint(series_name, points, {time_precision: 'm'}, function (err){
@@ -27,9 +29,9 @@ driver.create = function(sensor, points, cb) {
   });
 };
 
-module.exports = function(_config, _log){
+module.exports = function(_config, _logger){
   config = _config;
-  log    = _log;
+  log =  _logger.child({component: 'influx-db'});
   
   return driver;
 };

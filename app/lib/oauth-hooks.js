@@ -127,7 +127,7 @@ module.exports = function(_config, _logger){
   // Connect Redis connection
   redisClient = redis.createClient(redis_uri.port, redis_uri.hostname);
   if (redis_uri.auth) {
-    redisClient.auth(rtg.auth.split(":")[1]);
+    redisClient.auth(redis_uri.auth.split(":")[1]);
   }
 
   log =  _logger.child({component: 'oauth'});
