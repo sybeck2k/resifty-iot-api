@@ -20,7 +20,7 @@ module.exports = function (grunt) {
         tasks: 'jshint'
       },
       test: {
-        files: ['test/**/*.js'],
+        files: ['test/**/*.js','test/**/*.coffee'],
         tasks: ['mochacov:test']
       }
     },
@@ -45,7 +45,7 @@ module.exports = function (grunt) {
 
     mochacov: {
       options: {
-        files: 'test/specs/**/*.js'
+        files: ['test/**/*.js','test/**/*.coffee']
       },
       coverage: {
         options: {
@@ -55,7 +55,7 @@ module.exports = function (grunt) {
       test: {
         options: {
           reporter: 'spec',
-          require: ['test/init.js', 'should']
+          require: ['coffee-script/register', 'test/init.js', 'should']
         }
       }
     },

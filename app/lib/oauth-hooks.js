@@ -49,9 +49,9 @@ redis_utils.setTokenData = function(token) {
 hooks.grantClientToken = function (credentials, req, cb)  {
   Client.where( 'client', new RegExp('^' + credentials.clientId + '$', 'i') ).findOne(function (err, client) {
     if (err) {
-      cb(null, false);
+      return cb(null, false);
     } else if (!client) {
-      cb(null, false);
+      return cb(null, false);
     } else if (client.authenticate(credentials.clientSecret)) {
       //store the mongodb ID of the client for reference when generating the token in the grantScopes func
       req.clientObjId = client._id;
