@@ -17,8 +17,9 @@ var SensorSchema = new Schema({
   persistant:         { type: Boolean, default: true },
   description:        { type: String, trim: true},
   meta:               Schema.Types.Mixed,
-  type:               { type: String, enum: ['geo', 'scalar', 'state'], default: 'scalar' },
+  type:               { type: String, enum: ['geo', 'scalar', 'state'], default: 'scalar' }, //what is the reading (geospatial point, value, boolean state)?
   location:           { type: [], index: '2d'},
+  time_precision:     { type: String, enum: ['s', 'm', 'u'], default: 's' }, //what is the time precision of the readings (seconds, millis, micros)?
   device:             { type: ObjectId, required: true, ref: 'Device' },
   client:             { type: ObjectId, required: false, ref: 'ClientKey' }
 });
@@ -26,14 +27,15 @@ var SensorSchema = new Schema({
 SensorSchema.set('toJSON', {
   transform: function(doc, ret, options) {
     var retJson = {
-      id:          ret._id,
-      name:        ret.name,
-      description: ret.description,
-      meta:        ret.meta,
-      location:    ret.location,
-      device:      ret.device,
-      type:        ret.type,
-      persistant:  ret.persistant
+      id:             ret._id,
+      name:           ret.name,
+      description:    ret.description,
+      meta:           ret.meta,
+      location:       ret.location,
+      device:         ret.device,
+      time_precision: ret.time_precision,
+      type:           ret.type,
+      persistant:     ret.persistant
     };
     return retJson;
   }

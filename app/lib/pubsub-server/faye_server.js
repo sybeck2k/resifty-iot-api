@@ -128,9 +128,16 @@ module.exports = function(config, _logger, oauth_methods) {
   });
 
   //we add the Publish method to the server, compatible with the one of MQTT
-  bayeux_server.publish = function(message) {
-    log.debug("publishing", message, 'on', message.topic);
-    client.publish(message.topic, message);
+  bayeux_server.publish = function(message, cb) {
+    var publication_deferred = client.publish(message.topic, message);
+
+    publication_deferred.errback(function(err){
+      log.warn({error: err}, "Failed publication of message");
+      cb(false);
+    });
+    publication_deferred.errback(function(err){
+      cb(true);
+    });
   };
 
   log.info("Pubsub server mounted at /pubsub");
