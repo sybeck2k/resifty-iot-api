@@ -47,7 +47,7 @@ redis_utils.setTokenData = function(token) {
 
 // Grants a token to the given credentials.{clientId,clientSecret} if they are valid
 hooks.grantClientToken = function (credentials, req, cb)  {
-  Client.where( 'client', new RegExp('^' + credentials.clientId + '$', 'i') ).findOne(function (err, client) {
+  Client.findOne({'client': new RegExp('^' + credentials.clientId + '$', 'i')}, function (err, client) {
     if (err) {
       return cb(null, false);
     } else if (!client) {
