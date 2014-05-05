@@ -10,7 +10,6 @@ module.exports = function () {
   var routes = {};
 
   routes.getDevices = function (req, res, next) {
-    req.log.debug(req.credentials.clientId);
     Device.paginate({client: req.credentials.clientId}, req.page, req.results_per_page, function (err, page_count, resources) {
       if (err)
         return next(err);

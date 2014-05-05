@@ -45,17 +45,17 @@ module.exports = function (grunt) {
 
     mochacov: {
       options: {
-        files: ['test/**/*.js','test/**/*.coffee']
+        files: ['test/**/*.js','test/**/*.coffee'],
+        require: ['coffee-script/register', 'test/init.js', 'should']
       },
       coverage: {
         options: {
-          reporter: 'html-cov'
+          coveralls: true
         }
       },
       test: {
         options: {
-          reporter: 'spec',
-          require: ['coffee-script/register', 'test/init.js', 'should']
+          reporter: 'spec'
         }
       }
     },
