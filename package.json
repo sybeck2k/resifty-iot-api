@@ -34,7 +34,8 @@
     "influx": "0.2.x",
     "mosca": "^0.17.4",
     "underscore": "^1.6.0",
-    "faye": "^1.0.1"
+    "faye": "^1.0.1",
+    "faye-redis": "^0.2.0"
   },
   "devDependencies": {
     "grunt": "~0.4.2",
