@@ -9,9 +9,9 @@ var url               = require("url");
 
 var routes_path = require('path').normalize(__dirname) + '/routes';
 
-module.exports = function(config, log) {
+module.exports = function(config, log, redis_client) {
   // get the Oauth hooks
-  var oauth_methods = require("./lib/oauth-hooks")(config, log);
+  var oauth_methods = require("./lib/oauth-hooks")(config, log, redis_client);
   // get the driver for the sensor readings storage
   var sensor_reading_driver = require(config.sensor_storage.driver)(config, log);
 
@@ -22,7 +22,7 @@ module.exports = function(config, log) {
   });
 
   var api_server = restify.createServer({
-    name: "Example Restify-OAuth2 Resource Owner Password Credentials Server",
+    name: "iot API server",
     version: require("../package.json").version,
     log: log,
     formatters: {

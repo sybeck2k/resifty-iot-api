@@ -16,6 +16,17 @@ var ClientSchema = new Schema({
   secret:         { type: String, trim: true, required: true }
 });
 
+ClientSchema.set('toJSON', {
+  transform: function(doc, ret, options) {
+    var retJson = {
+      id:          ret._id,
+      clientId:    ret.clientId,
+      description: ret.description
+    };
+    return retJson;
+  }
+});
+
 /**
  * Pre-save hook
  */

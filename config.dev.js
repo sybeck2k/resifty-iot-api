@@ -7,7 +7,7 @@ module.exports = {
   },
   host: 'localhost',
   port: '9090',
-  db_url: 'mongodb://localhost:27017/restify_test',
+  db_url: 'mongodb://localhost:27017/restify_dev',
   sensor_storage: {
     driver: './lib/sensor-storage/influxdb',
     host: "localhost",

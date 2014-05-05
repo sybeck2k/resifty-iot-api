@@ -1,8 +1,4 @@
 "use strict";
-require('nodetime').profile({
-    accountKey: 'e454096c17e146c9fc69e46011cb27a77dd4090d', 
-    appName: 'Node.js Application'
-  });
 
 var Logger     = require('bunyan');
 var mongoose   = require('mongoose');

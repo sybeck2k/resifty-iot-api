@@ -1,10 +1,11 @@
-request = require("supertest")
-config = require("../../config.test")
-Logger = require("bunyan")
+request  = require("supertest")
+config   = require("../../config.test")
+Logger   = require("bunyan")
 mongoose = require("mongoose")
-crypto = require("crypto")
-Client = mongoose.model("ClientKey")
-Token  = mongoose.model("ClientToken")
+crypto   = require("crypto")
+redis    = require("redis")
+Client   = mongoose.model("ClientKey")
+Token    = mongoose.model("ClientToken")
 
 logger = new Logger(
   name: "restify-iot-test"
@@ -16,10 +17,16 @@ logger = new Logger(
     req: Logger.stdSerializers.req
 )
 
+redis_uri = require("url").parse(config.redis_url)
+redis_client = redis.createClient redis_uri.port, redis_uri.hostname
+if (redis_uri.auth)
+  redis_client.auth redis_uri.auth.split(":")[1]
+
+
 describe "The server", ->
   server = undefined
   beforeEach ->
-    server = require("../../app/server")(config, logger)
+    server = require("../../app/server")(config, logger, redis_client)
 
   afterEach ->
     server.close()
@@ -63,11 +70,13 @@ describe "The server", ->
         done()
 
     after (done) ->
-      Token.remove (err, p) ->
+      redis_client.flushdb (err, succes) ->
         throw err if err
-        Client.remove (err, p) ->
+        Token.remove (err, p) ->
           throw err if err
-          done()
+          Client.remove (err, p) ->
+            throw err if err
+            done()
 
     describe "requesting a token", ->
 

@@ -18,7 +18,7 @@ var DeviceSchema = new Schema({
   meta:               Schema.Types.Mixed,
   location:           { type: [], index: '2d'},
   parent:             { type: ObjectId, required: false, ref: 'Device' },
-  client:             { type: ObjectId, required: false, ref: 'ClientKey' }
+  client:             { type: ObjectId, required: true, ref: 'ClientKey' }
 });
 
 DeviceSchema.set('toJSON', {
@@ -27,6 +27,7 @@ DeviceSchema.set('toJSON', {
       id:          ret._id,
       name:        ret.name,
       description: ret.description,
+      client:      ret.client,
       meta:        ret.meta,
       location:    ret.location,
       parent:      ret.parent

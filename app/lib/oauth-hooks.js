@@ -8,7 +8,7 @@ var redis     = require('redis');
 var restify   = require('restify');
 var extend    = require('util')._extend;
 var hooks     = {};
-var log, redisClient, redis_utils = {};
+var log, redis_client, redis_utils = {};
 
 
 function generateToken(data)  {
@@ -21,7 +21,7 @@ function generateToken(data)  {
 
 // get the token data from Redis and extract the scope variable
 redis_utils.getTokenData = function(token_string, cb) {
-  redisClient.hgetall(token_string, function(err, token){
+  redis_client.hgetall(token_string, function(err, token){
     if (err) {
       return cb(err, null);
     }
@@ -38,7 +38,7 @@ redis_utils.setTokenData = function(token) {
   var token_clone = extend({}, token);
   delete token_clone.token;
   token_clone.scope = token.scope.join(",");
-  redisClient.hmset(token.token, token_clone, function(err){
+  redis_client.hmset(token.token, token_clone, function(err){
     if (err) {
       log.warn("Impossible to persist token data in Redis: " + err);
     }
@@ -121,15 +121,9 @@ hooks.authenticateToken = function (token, req, cb)  {
   });
 };
 
-module.exports = function(_config, _logger){
-  var redis_uri = require("url").parse(_config.redis_url);
+module.exports = function(_config, _logger, _redis_client){
 
-  // Connect Redis connection
-  redisClient = redis.createClient(redis_uri.port, redis_uri.hostname);
-  if (redis_uri.auth) {
-    redisClient.auth(redis_uri.auth.split(":")[1]);
-  }
-
+  redis_client =_redis_client;
   log =  _logger.child({component: 'oauth'});
   
   return hooks;

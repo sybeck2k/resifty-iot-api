@@ -10,6 +10,7 @@ module.exports = function () {
   var routes = {};
 
   routes.getDevices = function (req, res, next) {
+    req.log.debug(req.credentials.clientId);
     Device.paginate({client: req.credentials.clientId}, req.page, req.results_per_page, function (err, page_count, resources) {
       if (err)
         return next(err);
@@ -39,7 +40,7 @@ module.exports = function () {
         return next(err);
 
       req.page_count = page_count;
-      req.resource_base_url = '/device' + req.params.id + '/sensors';
+      req.resource_base_url = '/device/' + req.params.id + '/sensors';
       req.resources = resources;
       return next();
     });

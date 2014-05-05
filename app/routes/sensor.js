@@ -41,6 +41,7 @@ module.exports = function () {
   };
 
   routes.updateSensor = function (req, res, next) {
+    //@todo: cannot move the sensor to another device of which the user is not the owner!
     Sensor.findOneAndUpdate({_id: req.params.id, client: req.credentials.clientId}, {$set: req.body}, {upsert: true, safe:true}).exec(function(err, resource) {
       if (err)
         return next(err);
