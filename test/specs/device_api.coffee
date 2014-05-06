@@ -84,6 +84,9 @@ describe "The /device resource", ->
     it "GET /device/:id should be forbidden", (done) ->
       request(server).get("/device/#{a_device.id}").set("Accept", "application/json").expect("Content-Type", /json/).expect 403, done
 
+    it "GET /device/:id/sensors should be forbidden", (done) ->
+      request(server).get("/device/#{a_device.id}/sensors").set("Accept", "application/json").expect("Content-Type", /json/).expect 403, done
+
     it "POST /device should be forbidden", (done) ->
       another_device = _.clone(a_device)
       another_device.name = "another name"
@@ -142,6 +145,16 @@ describe "The /device resource", ->
           return done(err) if err
           # test that the device returned is the expected one
           res.body.id.should.equal(a_device.id.toHexString())
+          done()
+
+    it "GET /device/:id/sensors should return a list of sensors", (done) ->
+      request(server).get("/device/#{a_device.id}/sensors").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
+        .expect("Content-Type", /json/)
+        .expect(200)
+        .end (err, res) ->
+          return done(err) if err
+          # test that the device returned is the expected one
+          res.body.should.be.instanceof(Array).and.be.empty
           done()
 
     it "POST /device should create a new Device", (done) ->

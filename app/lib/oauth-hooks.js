@@ -49,10 +49,13 @@ redis_utils.setTokenData = function(token) {
 hooks.grantClientToken = function (credentials, req, cb)  {
   Client.findOne({'client': new RegExp('^' + credentials.clientId + '$', 'i')}, function (err, client) {
     if (err) {
+      log.error({error: err}, "Impossible to retrieve the client from the DB");
+      return cb(new restify.InternalError(), false);
+    }
+    if (!client) {
       return cb(null, false);
-    } else if (!client) {
-      return cb(null, false);
-    } else if (client.authenticate(credentials.clientSecret)) {
+    }
+    if (client.authenticate(credentials.clientSecret)) {
       //store the mongodb ID of the client for reference when generating the token in the grantScopes func
       req.clientObjId = client._id;
       var token       = generateToken(credentials.clientId + ":" + credentials.clientSecret);
@@ -65,13 +68,14 @@ hooks.grantClientToken = function (credentials, req, cb)  {
 // Grants scopes to the given credentials.{clientId,clientSecret,token} if they are valid
 hooks.grantScopes = function (credentials, scopesRequested, req, cb) {
   if (!req.clientObjId) {
-    throw new Error("Missing clientObjId parameter");
+    log.error("Missing clientObjId parameter");
+    return cb(new restify.InternalError(), false);
   }
   
   Token.create({ clientId: req.clientObjId, token: credentials.token, scope: scopesRequested }, function (err, newToken) {
     if (err) {
-      log.warn(credentials, err);
-      throw new Error("Impossible to persist new Token");
+      log.error({error: err}, "Impossible to persist new token");
+      return cb(new restify.InternalError(), false);
     }
       
     // Store the token in the Redis datastore so we can perform fast queries on it
@@ -98,19 +102,18 @@ hooks.authenticateToken = function (token, req, cb)  {
     if(err || authToken === null){
       Token.findOne({ token: token }, function (err, authToken) {
         if(err){
-          cb(null, false);
-        }else {
-          if( authToken === null ) {
-            cb(null, false);
-          } else {
-            authToken = authToken.toJSON();
-            redis_utils.setTokenData(authToken);
-            if (req) {
-              req.credentials = authToken;
-            }
-            return cb(null, true);
-          }
+          log.error({error: err}, "Impossible to retrieve the token from the DB");
+          return cb(new restify.InternalError(), false);
         }
+        if (!authToken) {
+          return cb(null, false);
+        }
+        authToken = authToken.toJSON();
+        redis_utils.setTokenData(authToken);
+        if (req) {
+          req.credentials = authToken;
+        }
+        return cb(null, true);
       });
     } else {
       if (req) {
@@ -125,6 +128,7 @@ module.exports = function(_config, _logger, _redis_client){
 
   redis_client =_redis_client;
   log =  _logger.child({component: 'oauth'});
-  
+  hooks.log = log;
+
   return hooks;
 };
