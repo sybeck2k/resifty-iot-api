@@ -35,6 +35,16 @@ describe "The OAuth hooks", ->
   afterEach ->
     #server.close()
 
+  it "requesting to grant scopes without a client ID should return an internal error", (done) ->
+    logger_mock = sinon.mock(oauth_hooks.log)
+    logger_error_mock = logger_mock.expects("error").once()
+    oauth_hooks.grantScopes {}, {}, {}, (err, scopes) ->
+      scopes.should.be.false
+      logger_error_mock.verify()
+      logger_mock.restore()
+      err.should.be.an.instanceof(restify.InternalError)
+      done()
+
   describe "when Redis is not working correctly", ->
     client = new Client()
     credentials = 
@@ -67,7 +77,6 @@ describe "The OAuth hooks", ->
           authenticated.should.be.false
           done()
 
-
   describe "when MongoDB is not working correctly", ->
     client = new Client()
     logger_mock = undefined
@@ -92,6 +101,16 @@ describe "The OAuth hooks", ->
     
     afterEach ->
       logger_mock.restore()
+
+    it "a request to authenticate a token should return an internal error", (done) ->
+      sinon.stub(Token, "findOne").yields {error: "error"}, null
+      logger_error_mock = logger_mock.expects("error").once()
+      oauth_hooks.authenticateToken "abc", {}, (err, token) ->
+        logger_error_mock.verify()
+        Token.findOne.restore()
+        (!!token).should.be.false
+        err.should.be.an.instanceof(restify.InternalError)
+        done()
 
     describe "when generating the Token", ->
       it "a request to grant a token should return an internal error", (done) ->

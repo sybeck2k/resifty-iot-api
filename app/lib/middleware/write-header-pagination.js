@@ -1,11 +1,14 @@
 "use strict";
 
+var restify = require("restify");
+
 // Paginate results in API GET methods
 // requires that req.resource_base_url (the base address of the request), 
 // req.page_count (the total page count) and req.page (the current page) are set
 module.exports = function(req, res, next) {
-  if (!req.resource_base_url || !req.page_count || !req.page) {
-    throw new Error("Missing required parameters");
+  if (!req.resource_base_url || !req.page_count || !req.page || !req.results_per_page) {
+    req.log.error("Missing mandatory parameters {resource_base_url,page_count,page}");
+    return next(new restify.InternalError());
   }
 
   var header_link = "",
@@ -22,6 +25,7 @@ module.exports = function(req, res, next) {
   if (req.page_count > 1) {
     header_link += ',<' + fullURL + '&page='+ (req.page -1) +'>; rel="prev"';
   }
+  
   res.setHeader('Link', header_link);
   res.send(req.resources);
 };
