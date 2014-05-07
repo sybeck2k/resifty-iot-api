@@ -120,3 +120,4 @@ describe "The Pagination middleware", ->
     spyCall = next_spy.getCall(0).args[0]
     spyCall.statusCode.should.equal(500)
     done()
+

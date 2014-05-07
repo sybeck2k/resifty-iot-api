@@ -26,7 +26,7 @@
   "dependencies": {
     "restify": "2.7.x",
     "restify-oauth2": "4.x",
-    "mongoose": "3.6.x",
+    "mongoose": "3.8.x",
     "bcrypt": "0.7.5",
     "mongoose-validator": "0.2.x",
     "redis": "0.8.x",
@@ -35,7 +35,8 @@
     "mosca": "^0.17.4",
     "underscore": "^1.6.0",
     "faye": "^1.0.1",
-    "faye-redis": "^0.2.0"
+    "faye-redis": "^0.2.0",
+    "bluebird": "^1.2.4"
   },
   "devDependencies": {
     "grunt": "~0.4.2",
@@ -52,8 +53,6 @@
     "grunt-mocha-cov": "^0.2.1",
     "grunt-cli": "^0.1.13",
     "coffee-script": "^1.7.1",
-    "sinon": "^1.9.1",
-    "node-mocks-http": "^1.0.4",
-    "parse-links": "^0.1.0"
+    "sinon": "^1.9.1"
   }
 }

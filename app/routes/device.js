@@ -11,8 +11,10 @@ module.exports = function () {
 
   routes.getDevices = function (req, res, next) {
     Device.paginate({client: req.credentials.clientId}, req.page, req.results_per_page, function (err, page_count, resources) {
-      if (err)
-        return next(err);
+      if (err) {
+        req.log.error({error: err}, "Impossible to retrieve the devices from the DB");
+        return next(new restify.InternalError());
+      }
 
       req.page_count = page_count;
       req.resources = resources;
@@ -23,8 +25,10 @@ module.exports = function () {
 
   routes.getDevice = function (req, res, next) {
     Device.findOne({_id: req.params.id, client: req.credentials.clientId}, function(err, resource){
-      if (err)
-        return next(err);
+      if (err) {
+        req.log.error({error: err}, "Impossible to retrieve the device from the DB");
+        return next(new restify.InternalError());
+      }
       if (!resource)
         res.send(404);
       else
@@ -35,9 +39,10 @@ module.exports = function () {
 
   routes.getSensors = function (req, res, next) {
     Sensor.paginate({device: req.params.id, client: req.credentials.clientId}, req.page, req.results_per_page, function (err, page_count, resources) {
-      if (err)
-        return next(err);
-
+      if (err) {
+        req.log.error({error: err}, "Impossible to retrieve the Sensors from the DB");
+        return next(new restify.InternalError());
+      }
       req.page_count = page_count;
       req.resource_base_url = '/device/' + req.params.id + '/sensors';
       req.resources = resources;
@@ -47,8 +52,13 @@ module.exports = function () {
 
   routes.createDevice = function (req, res, next) {
     Device.create(extend(req.body, {client: req.credentials.clientId}), function (err, new_resource) {
-      if (err)
-        return next(err);
+      if (err) {
+        if (err.name && err.name === 'ValidationError') {
+          return next(err);
+        }
+        req.log.error({error: err}, "Impossible to persist the device from the DB");
+        return next(new restify.InternalError());
+      }
       res.send(201, new_resource);
       return next();
     });
@@ -72,8 +82,10 @@ module.exports = function () {
 
   routes.deleteDevice = function (req, res, next) {
     Device.find({_id: req.params.id, client: req.credentials.clientId}).remove(function(err){
-      if (err)
-        return next(err);
+      if (err) {
+        req.log.error({error: err}, "Impossible to delete the device from the DB");
+        return next(new restify.InternalError());
+      }
       res.send(204);
       return next();
     });

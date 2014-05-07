@@ -179,6 +179,13 @@ describe "The /sensor resource", ->
             res.body.id.should.equal(another_sensor.id.toHexString())
             done()
 
+    it "GET /sensor/:id should return not found if not existing", (done) ->
+      create_a_sensor (err, another_sensor) ->
+        return done(err) if err
+        request(server).get("/sensor/"+mongoose.Types.ObjectId()).set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
+          .expect("Content-Type", /json/)
+          .expect 404 , done
+
     it "POST /sensor should create a new Sensor", (done) ->
       a_sensor.device = a_device.id
       a_sensor.client = client.id
@@ -194,18 +201,27 @@ describe "The /sensor resource", ->
             sensors.length.should.equal(1)
             done()
 
-    it "PATCH /sensor should modify an existing Sensor", (done) -> 
+    it "PATCH /sensor/:id should modify an existing Sensor", (done) -> 
       create_a_sensor (err, a_sensor) ->
         return done(err) if err
         request(server).patch("/sensor/#{a_sensor.id}").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
           .send({name: "Modified Name"})
           .expect("Content-Type", /json/)
+          .expect(200)
           .end (err, res) ->
             return done(err) if err
             # test that the the modified sensor id is returned
             res.body.id.should.be.ok
             res.body.name.should.equal("Modified Name")
             done()
+
+    it "PATCH /sensor/:id should return not found if not existing", (done) -> 
+      create_a_sensor (err, another_sensor) ->
+        return done(err) if err
+        request(server).patch("/sensor/"+mongoose.Types.ObjectId()).set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
+          .send({name: "Modified Name"})
+          .expect("Content-Type", /json/)
+          .expect 404 , done
 
     it "DEL /sensor/:id should delete an existing Sensor", (done) ->
       create_a_sensor (err, a_sensor) ->
@@ -220,3 +236,11 @@ describe "The /sensor resource", ->
             Sensor.findOne {_id: a_sensor.id}, (err, sensor) ->
               (sensor == null).should.be.true
               done()
+
+    it "DEL /sensor/:id should return not found if not existing", (done) -> 
+      create_a_sensor (err, another_sensor) ->
+        return done(err) if err
+        request(server).del("/sensor/"+mongoose.Types.ObjectId()).set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
+          .send({name: "Modified Name"})
+          .expect("Content-Type", /json/)
+          .expect 404 , done
