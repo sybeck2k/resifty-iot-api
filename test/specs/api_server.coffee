@@ -34,6 +34,9 @@ describe "The server", ->
   it "GET / should be public", (done) ->
     request(server).get("/").set("Accept", "application/json").expect("Content-Type", /json/).expect 200, done
 
+  it "GET /inexistant should return page not found", (done) ->
+    request(server).get("/inexistant").set("Accept", "application/json").expect("Content-Type", /json/).expect 404, done
+
   it "GET / should point to the proper token url and provide auth info", (done) ->
     request(server).get("/").set("Accept", "application/json").expect(200).end((err, res) ->
       return done(err) if err

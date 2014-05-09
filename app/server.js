@@ -29,7 +29,7 @@ module.exports = function(config, log, redis_client) {
       'application/json': function(req, res, body) {
         if (body instanceof Error) {
           if (body.name === 'ValidationError') {
-            res.statusCode = body.statusCode || 500;
+            res.statusCode = body.statusCode || 422;
             body = {
               message: body.message,
               errors: body.errors

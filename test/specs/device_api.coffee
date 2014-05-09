@@ -147,6 +147,11 @@ describe "The /device resource", ->
           res.body.id.should.equal(a_device.id.toHexString())
           done()
 
+    it "GET /device/:id should return not found if not existing", (done) ->
+      request(server).get("/device/"+mongoose.Types.ObjectId()).set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
+        .expect("Content-Type", /json/)
+        .expect 404 , done
+
     it "GET /device/:id/sensors should return a list of sensors", (done) ->
       request(server).get("/device/#{a_device.id}/sensors").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
         .expect("Content-Type", /json/)
@@ -157,7 +162,7 @@ describe "The /device resource", ->
           res.body.should.be.instanceof(Array).and.be.empty
           done()
 
-    it "POST /device should create a new Device", (done) ->
+    it "POST /device with valid data should create a new Device", (done) ->
       another_device = _.clone(a_device)
       delete another_device.id
       request(server).post("/device").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
@@ -176,13 +181,24 @@ describe "The /device resource", ->
               return done(err) if err
               done()
 
+    it "POST /device without a name should return an informative error", (done) ->
+      another_device = _.clone(a_device)
+      another_device.name = ""
+      request(server).post("/device").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
+        .send(another_device)
+        .expect("Content-Type", /json/)
+        .expect(422)
+        .end (err, res) ->
+          return done(err) if err
+          # test that the the new sensor id is returned
+          res.body.errors.name.should.be.ok
+          done()
+
     it "PATCH /device/:id should modify an existing Device", (done) ->
       another_device = _.clone(a_device)
       delete another_device.id
       Device.create another_device, (err, new_device) ->
-        if err
-          logger.error(another_device, err)
-          throw new Error("impossible to create the sample device")
+        return done(err) if err
         another_device = new_device.toJSON()
         
         request(server).patch("/device/#{another_device.id}").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
@@ -202,13 +218,21 @@ describe "The /device resource", ->
                 return done(err) if err
                 done()
 
+    it "PATCH /device/:id should return not found if not existing", (done) -> 
+      another_device = _.clone(a_device)
+      delete another_device.id
+      Device.create another_device, (err, new_device) ->
+        return done(err) if err
+        request(server).patch("/device/"+mongoose.Types.ObjectId()).set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
+          .send({name: "Modified Name"})
+          .expect("Content-Type", /json/)
+          .expect 404 , done
+
     it "DEL /device/:id should delete an existing Device", (done) ->
       another_device = _.clone(a_device)
       delete another_device.id
       Device.create another_device, (err, new_device) ->
-        if err
-          logger.error(another_device, err)
-          throw new Error("impossible to create the sample device")
+        return done(err) if err
         another_device = new_device.toJSON()
         
         request(server).del("/device/#{another_device.id}").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
@@ -221,3 +245,13 @@ describe "The /device resource", ->
             Device.findOne {_id: another_device.id}, (err, device) ->
               (device == null).should.be.true
               done()
+
+    it "DEL /device/:id should return not found if not existing", (done) -> 
+      another_device = _.clone(a_device)
+      delete another_device.id
+      Device.create another_device, (err, new_device) ->
+        return done(err) if err
+        request(server).del("/device/"+mongoose.Types.ObjectId()).set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
+          .send({name: "Modified Name"})
+          .expect("Content-Type", /json/)
+          .expect 404 , done

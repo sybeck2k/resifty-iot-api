@@ -147,12 +147,15 @@ describe "The /sensor resource", ->
               done()
 
   describe "with a valid token", ->
-    a_sensor = 
-      name:        "a name"
-      description: "a description"
-      type:        "scalar"
-      meta:        {"some":"meta", "data":[0,1]}
-      location:    []
+    a_sensor = undefined
+
+    beforeEach ->
+      a_sensor = 
+        name:        "a name"
+        description: "a description"
+        type:        "scalar"
+        meta:        {"some":"meta", "data":[0,1]}
+        location:    []
 
     it "GET /sensor should return an array of sensors", (done) ->
       create_a_sensor (err, another_sensor) ->
@@ -186,7 +189,7 @@ describe "The /sensor resource", ->
           .expect("Content-Type", /json/)
           .expect 404 , done
 
-    it "POST /sensor should create a new Sensor", (done) ->
+    it "POST /sensor with valid data should create a new Sensor", (done) ->
       a_sensor.device = a_device.id
       a_sensor.client = client.id
       request(server).post("/sensor").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
@@ -200,6 +203,33 @@ describe "The /sensor resource", ->
           Sensor.find {client: a_sensor.client}, (err, sensors) ->
             sensors.length.should.equal(1)
             done()
+
+    it "POST /sensor without a name should return an informative error", (done) ->
+      a_sensor.device = a_device.id
+      a_sensor.client = client.id
+      a_sensor.name = ""
+      request(server).post("/sensor").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
+        .send(a_sensor)
+        .expect("Content-Type", /json/)
+        .expect(422)
+        .end (err, res) ->
+          return done(err) if err
+          # test that the the new sensor id is returned
+          res.body.errors.name.should.be.ok
+          done()
+
+    it "POST /sensor with an inexisting device ID should return an informative error", (done) ->
+      a_sensor.device = mongoose.Types.ObjectId()
+      a_sensor.client = client.id
+      request(server).post("/sensor").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
+        .send(a_sensor)
+        .expect("Content-Type", /json/)
+        .expect(422)
+        .end (err, res) ->
+          return done(err) if err
+          # test that the the new sensor id is returned
+          res.body.errors.device.should.be.ok
+          done()
 
     it "PATCH /sensor/:id should modify an existing Sensor", (done) -> 
       create_a_sensor (err, a_sensor) ->
