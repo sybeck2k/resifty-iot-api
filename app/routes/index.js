@@ -3,7 +3,7 @@
 var restify  = require('restify');
 
 module.exports = function (server, config, sensor_reading_driver, pubsub_server) {
-  var validateClient = require('../lib/middleware/validate-client'),
+  var validateClient   = require('../lib/middleware/validate-client'),
       validateObjectId = require('../lib/middleware/validate-objectId'),
       headerPagination = require('../lib/middleware/write-header-pagination');
 

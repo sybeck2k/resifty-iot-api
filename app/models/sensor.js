@@ -21,7 +21,7 @@ var SensorSchema = new Schema({
   location:           { type: [], index: '2d'},
   time_precision:     { type: String, enum: ['s', 'm', 'u'], default: 's' }, //what is the time precision of the readings (seconds, millis, micros)?
   device:             { type: ObjectId, required: true, ref: 'Device' },
-  client:             { type: ObjectId, required: false, ref: 'ClientKey' }
+  client:             { type: ObjectId, required: true, ref: 'ClientKey' }
 });
 
 SensorSchema.set('toJSON', {
@@ -45,11 +45,26 @@ SensorSchema.set('toJSON', {
  * Validations
  */
 
+//validate that the requested device is of property of this client
+SensorSchema.path('device').validate(function (device_id, respond) {
+  //this condition will fail validation for the client required validator anyway
+  if (!this._doc.client || !device_id) {
+    return respond(true);
+  }
+  var clientId = this._doc.client;
+  mongoose.model('Device')
+    .findOne({_id: device_id, client: clientId}, function(err, device){
+      if (err || !device) {
+        return respond(false);
+      }
+      return respond(true);
+    });
+}, 'Invalid device ID');
+
 /**
  * Pre-save hook
  */
 SensorSchema.pre('save', function(next) {
-  //throw new Error("@todo consistency with device!");
   next();
 });
 
@@ -60,6 +75,27 @@ SensorSchema.pre('save', function(next) {
 SensorSchema.methods = {
 };
 
-SensorSchema.statics.paginate = paginate;
-
+SensorSchema.statics = {
+  paginate: paginate,
+  createSafeFields: [
+    'name',
+    'description',
+    'meta',
+    'location',
+    'device',
+    'time_precision',
+    'type',
+    'persistant'
+  ],
+  updateSafeFields: [
+    'name',
+    'description',
+    'meta',
+    'location',
+    'device',
+    'time_precision',
+    'type',
+    'persistant'
+  ]
+};
 mongoose.model('Sensor', SensorSchema);

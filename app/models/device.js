@@ -39,6 +39,21 @@ DeviceSchema.set('toJSON', {
 /**
  * Validations
  */
+//validate that the requested parent device is of property of this client
+DeviceSchema.path('parent').validate(function (device_id, respond) {
+  //this condition will fail validation for the client required validator anyway
+  if (!this._doc.client || !device_id) {
+    return respond(true);
+  }
+  var clientId = this._doc.client;
+  mongoose.model('Device')
+    .findOne({_id: device_id, client: clientId}, function(err, device){
+      if (err || !device) {
+        return respond(false);
+      }
+      return respond(true);
+    });
+}, 'Invalid parent device ID');
 
 /**
  * Pre-save hook
@@ -54,6 +69,22 @@ DeviceSchema.pre('save', function(next) {
 DeviceSchema.methods = {
 };
 
-DeviceSchema.statics.paginate = paginate;
+DeviceSchema.statics = {
+  paginate: paginate,
+  createSafeFields: [
+    'name',
+    'description',
+    'meta',
+    'location',
+    'parent'
+  ],
+  updateSafeFields: [
+    'name',
+    'description',
+    'meta',
+    'location',
+    'parent'
+  ]
+};
 
 mongoose.model('Device', DeviceSchema);
