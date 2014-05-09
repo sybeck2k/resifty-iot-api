@@ -54,6 +54,7 @@
     "grunt-cli": "^0.1.13",
     "coffee-script": "^1.7.1",
     "sinon": "^1.9.1",
-    "node-mocks-http": "^1.0.4"
+    "node-mocks-http": "^1.0.4",
+    "parse-links": "^0.1.0"
   }
 }
