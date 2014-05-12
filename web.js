@@ -8,7 +8,8 @@ var mongoose   = require('mongoose');
 var fs         = require('fs');
 var redis      = require('redis');
 
-var logger = new Logger({
+var logger = new Logger(
+  {
     name: 'restify-iot',
     streams: [
       {
@@ -19,7 +20,8 @@ var logger = new Logger({
     serializers: {
       req: Logger.stdSerializers.req
     }
-});
+  }
+);
 
 // Load configurations
 var env     = process.env.NODE_ENV || 'dev';

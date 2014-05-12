@@ -13,8 +13,8 @@ module.exports = function(config) {
     }
     var query = url.parse(req.url,true).query;
 
-    var requst_pagination_page_number = 'page' in query ? parseInt(query.page) : 1,
-        requst_pagination_per_page    = 'per_page' in query ? parseInt(query.per_page) : config.pagination.results_per_page;
+    var requst_pagination_page_number = 'page' in query ? parseInt(query.page, 10) : 1,
+        requst_pagination_per_page    = 'per_page' in query ? parseInt(query.per_page, 10) : config.pagination.results_per_page;
 
     if (requst_pagination_page_number === 0 ) {
       return next(new restify.InvalidArgumentError("Pages must be 1-indexed"));

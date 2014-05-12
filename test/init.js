@@ -2,6 +2,9 @@ var fs         = require('fs');
 var mongoose   = require('mongoose');
 var config     = require('../config.test');
 var Logger     = require('bunyan');
+var path       = require('path');
+
+var srcDir = path.join(__dirname, '..', 'app');
 
 var logger = new Logger({
     name: 'restify-iot-test',
@@ -31,4 +34,9 @@ db.once('open', function callback () {
 fs.readdirSync(models_path).forEach(function (file) {
   logger.debug("Loading model " + file);
   require(models_path + '/' +file);
+});
+
+require('blanket')({
+  // Only files that match the pattern will be instrumented
+  pattern: srcDir
 });

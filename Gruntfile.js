@@ -43,26 +43,28 @@ module.exports = function (grunt) {
       }
     },
 
-    mochacov: {
-      options: {
-        files: ['test/**/*.js','test/**/*.coffee'],
-        require: ['coffee-script/register', 'test/init.js', 'should']
+    mochaTest: {
+      
+      test: {
+        options: {
+          reporter: 'spec',
+          require: ['coffee-script/register', 'test/init.js', 'should']
+        },
+        src: ['test/**/*.coffee', 'test/**/*.js']
       },
       coverage: {
         options: {
-          coveralls: true
-        }
-      },
-      test: {
-        options: {
-          reporter: 'spec'
-        }
+          reporter: 'mocha-lcov-reporter',
+          quiet: true,
+          captureFile:'coverage.lcov'
+        },
+        src: ['test/**/*.coffee', 'test/**/*.js']
       }
     },
 
     clean: {
       coverage: {
-        src: ['test/coverage/']
+        src: ['coverage/']
       }
     }
 
@@ -74,7 +76,7 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-copy');
-  grunt.loadNpmTasks('grunt-mocha-cov');
+  grunt.loadNpmTasks('grunt-mocha-test');
   grunt.loadNpmTasks('grunt-nodemon');
   grunt.loadNpmTasks('grunt-concurrent');
   grunt.loadNpmTasks('grunt-env');
@@ -83,6 +85,6 @@ module.exports = function (grunt) {
   grunt.registerTask('server', ['concurrent:target']);
   grunt.registerTask('default', []);
   grunt.registerTask('travis', ['mochacov:coverage']);
-  grunt.registerTask('test', ['jshint', 'mochacov:test']);
+  grunt.registerTask('test', ['clean', 'jshint', 'mochaTest']);
 
 };

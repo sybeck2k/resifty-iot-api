@@ -101,8 +101,7 @@ module.exports = function (sensor_reading_driver, pubsub_server) {
   routes.createPoint = function (req, res, next) {
     // Validates that the given sensor exists and is associated to the authenticated client
     Sensor.findOne({_id: req.params.id, client: req.credentials.clientId}, function(err, sensor){
-      if (err)
-        return next(err);
+      next.ifError(err);
       if (!sensor) {
         res.send(404);
         return next();
@@ -128,8 +127,7 @@ module.exports = function (sensor_reading_driver, pubsub_server) {
       //store the data point(s) only if the sensor is persistant
       if (sensor.persistant) {
         sensor_reading_driver.create(sensor, normalized_datapoints, function (err, new_points){
-          if (err)
-            return next(err);
+          next.ifError(err);
           res.send(201);
           return next();
         });
@@ -140,6 +138,7 @@ module.exports = function (sensor_reading_driver, pubsub_server) {
     });
     
   };
+
 
   return routes;
 };
