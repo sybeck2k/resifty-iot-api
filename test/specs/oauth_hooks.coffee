@@ -47,6 +47,7 @@ describe "The OAuth hooks", ->
 
   describe "when Redis is not working correctly", ->
     client = new Client()
+    client.secret = "abc"
     credentials = 
       clientId: 123
       clientSecret: "abc"

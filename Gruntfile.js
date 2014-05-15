@@ -84,7 +84,6 @@ module.exports = function (grunt) {
   // tasks
   grunt.registerTask('server', ['concurrent:target']);
   grunt.registerTask('default', []);
-  grunt.registerTask('travis', ['mochacov:coverage']);
   grunt.registerTask('test', ['clean', 'jshint', 'mochaTest']);
 
 };

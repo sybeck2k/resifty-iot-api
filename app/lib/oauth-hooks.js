@@ -7,6 +7,7 @@ var Token     = mongoose.model('ClientToken');
 var redis     = require('redis');
 var restify   = require('restify');
 var extend    = require('util')._extend;
+var Promise   = require("bluebird");
 var hooks     = {};
 var log, redis_client, redis_utils = {};
 
@@ -55,13 +56,16 @@ hooks.grantClientToken = function (credentials, req, cb)  {
     if (!client) {
       return cb(null, false);
     }
-    if (client.authenticate(credentials.clientSecret)) {
+
+    client.authenticate(credentials.clientSecret, function(err, is_authenticated){
+      if (!is_authenticated) {
+        return cb(null, false);
+      }
       //store the mongodb ID of the client for reference when generating the token in the grantScopes func
       req.clientObjId = client._id;
-      var token       = generateToken(credentials.clientId + ":" + credentials.clientSecret);
+      var token       = generateToken(credentials.clientId + ":" + client.secretHash);
       return cb(null, token);
-    }
-    return cb(null, false);
+    });
   });
 };
 
@@ -100,8 +104,8 @@ hooks.authenticateToken = function (token, req, cb)  {
      * Redis has deleted the token
      */
     if(err || authToken === null){
-      Token.findOne({ token: token }, function (err, authToken) {
-        if(err){
+      Token.findOne({ token: token }, function(err, authToken){
+        if (err) {
           log.error({error: err}, "Impossible to retrieve the token from the DB");
           return cb(new restify.InternalError(), false);
         }
