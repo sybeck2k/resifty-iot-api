@@ -5,7 +5,8 @@ mongoose = require("mongoose")
 crypto   = require("crypto")
 redis    = require("redis")
 _        = require("underscore")
-should   = require('should');
+should   = require('should')
+moment   = require('moment')
 Client   = mongoose.model("ClientKey")
 Token    = mongoose.model("ClientToken")
 Device   = mongoose.model("Device")
@@ -41,15 +42,21 @@ describe "The /sensor resource", ->
     meta:        {"some":"meta", "data":[0,1]}
     location:    []
 
-  create_a_sensor = (cb)->
-    a_sensor = 
-      name:        "a name"
-      description: "a description"
-      type:        "scalar"
-      meta:        {"some":"meta", "data":[0,1]}
-      location:    []
-      device:      a_device.id
-      client:     client.id
+  '''
+  Create a default sensor, or the one given as input
+  '''
+  create_a_sensor = (a_sensor, cb)->
+    if (_.isFunction(a_sensor))
+      cb = a_sensor
+      a_sensor = 
+        name:        "a name"
+        description: "a description"
+        type:        "scalar"
+        meta:        {"some":"meta", "data":[0,1]}
+        location:    []
+        device:      a_device.id
+        client:     client.id
+
     Sensor.create a_sensor, (err, new_sensor) ->
       if err
         cb err, null
@@ -274,3 +281,166 @@ describe "The /sensor resource", ->
           .send({name: "Modified Name"})
           .expect("Content-Type", /json/)
           .expect 404 , done
+
+    describe "the sensor reading", ->
+      
+      it "PUT /sensor/:id should return not found if not existing", (done) -> 
+        create_a_sensor (err, a_sensor) ->
+          return done(err) if err
+          request(server).put("/sensor/"+mongoose.Types.ObjectId()).set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
+            .send({an: "object"})
+            .expect("Content-Type", /json/)
+            .expect 404 , done
+      
+      it "PUT /sensor/:id should return a validation error if neither current_value nor datapoints are given", (done) -> 
+        create_a_sensor (err, a_sensor) ->
+          return done(err) if err
+          request(server).put("/sensor/#{a_sensor.id}").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
+            .send({an: "object"})
+            .expect("Content-Type", /json/)
+            .expect 409 , done
+      
+      it "PUT /sensor/:id should return a validation error if datapoints is not an array", (done) -> 
+        create_a_sensor (err, a_sensor) ->
+          return done(err) if err
+          request(server).put("/sensor/#{a_sensor.id}").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
+            .send({datapoints: "string"})
+            .expect("Content-Type", /json/)
+            .expect 409 , done
+
+      describe "of type `geo`", ->
+        a_geo_sensor = undefined
+
+        beforeEach (done) ->
+          a_geo_sensor = 
+            name:           "a name"
+            description:    "a description"
+            type:           "geo"
+            meta:           {"some":"meta", "data":[0,1]}
+            time_precision: 's'
+            location:       []
+            device:         a_device.id
+            client:         client.id
+
+          create_a_sensor a_geo_sensor, (err, another_sensor) ->
+            return done(err) if err
+            a_geo_sensor = another_sensor
+            done()
+
+        it "PUT /sensor/:id with 2 floats as current value should return a new reading", (done) ->
+          request(server).put("/sensor/#{a_geo_sensor.id}").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
+            .send({current_value: [1.33, 100.33]})
+            .expect("Content-Type", /json/)
+            .expect 201
+            .end (err, res) ->
+              return done(err) if err
+              now = moment().unix()
+              res.body.should.be.ok
+              res.body.value.should.eql [1.33, 100.33]
+              (res.body.at / 1000000).should.be.above(now-1).and.be.below(now+1)
+              done()
+
+        it "PUT /sensor/:id with a list of datapoints of array of floats should return a list of the same size of new readings", (done) ->
+          datapoints = []
+          for x in [1..15]
+            test_array=[_.random(10,100),_.random(10,100)] 
+            datapoints.push 
+              at: moment().unix() - x
+              value: test_array
+
+          request(server).put("/sensor/#{a_geo_sensor.id}").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
+            .send({datapoints: datapoints})
+            .expect("Content-Type", /json/)
+            .expect 201
+            .end (err, res) ->
+              return done(err) if err
+              res.body.should.be.ok
+              res.body.length.should.equal(15)
+              done()
+
+        it "PUT /sensor/:id with a list of datapoints of array of floats AND a current reading should return a list of the same size of new readings", (done) ->
+          datapoints = []
+          for x in [1..15]
+            test_array=[_.random(10,100),_.random(10,100)] 
+            datapoints.push 
+              at: moment().unix() - x
+              value: test_array
+
+          request(server).put("/sensor/#{a_geo_sensor.id}").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
+            .send({datapoints: datapoints, current_value: [1.33, 100.33]})
+            .expect("Content-Type", /json/)
+            .expect 201
+            .end (err, res) ->
+              return done(err) if err
+              res.body.should.be.ok
+              res.body.length.should.equal(16)
+              done()
+
+      describe "of type `scalar`", ->
+        a_geo_sensor = undefined
+
+        beforeEach (done) ->
+          a_geo_sensor = 
+            name:           "a name"
+            description:    "a description"
+            type:           "scalar"
+            meta:           {"some":"meta", "data":[0,1]}
+            time_precision: 's'
+            location:       []
+            device:         a_device.id
+            client:         client.id
+
+          create_a_sensor a_geo_sensor, (err, another_sensor) ->
+            return done(err) if err
+            a_geo_sensor = another_sensor
+            done()
+
+        it "PUT /sensor/:id with a float as current value should return a new reading", (done) ->
+          request(server).put("/sensor/#{a_geo_sensor.id}").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
+            .send({current_value: 255.55})
+            .expect("Content-Type", /json/)
+            .expect 201
+            .end (err, res) ->
+              return done(err) if err
+              now = moment().unix()
+              res.body.should.be.ok
+              res.body.value.should.equal 255.55
+              (res.body.at / 1000000).should.be.above(now-1).and.be.below(now+1)
+              done()
+
+        it "PUT /sensor/:id with a list of datapoints of floats should return a list of the same size of new readings", (done) ->
+          datapoints = []
+          for x in [1..15]
+            datapoints.push 
+              at: moment().unix() - x
+              value: _.random(10,100)
+
+          request(server).put("/sensor/#{a_geo_sensor.id}").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
+            .send({datapoints: datapoints})
+            .expect("Content-Type", /json/)
+            .expect 201
+            .end (err, res) ->
+              return done(err) if err
+              res.body.should.be.ok
+              res.body.length.should.equal(15)
+              done()
+
+        it "PUT /sensor/:id with a list of datapoints of floats AND a current reading should return a list of the same size of new readings", (done) ->
+          datapoints = []
+          for x in [1..15]
+            datapoints.push 
+              at: moment().unix() - x
+              value: _.random(10,100)
+
+          request(server).put("/sensor/#{a_geo_sensor.id}").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
+            .send({datapoints: datapoints, current_value: 1.33})
+            .expect("Content-Type", /json/)
+            .expect 201
+            .end (err, res) ->
+              return done(err) if err
+              res.body.should.be.ok
+              res.body.length.should.equal(16)
+              done()
+
+      describe "of type `state`", ->
+        

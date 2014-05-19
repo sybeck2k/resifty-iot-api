@@ -1,9 +1,10 @@
 "use strict";
 
-var restify  = require('restify'),
-    mongoose = require('mongoose'),
-    Sensor   = mongoose.model('Sensor'),
-    _        = require('underscore');
+var restify   = require('restify'),
+    mongoose  = require('mongoose'),
+    Sensor    = mongoose.model('Sensor'),
+    _         = require('underscore'),
+    microtime = require('microtime');
 
 module.exports = function (sensor_reading_driver, pubsub_server) {
   var routes = {};
@@ -19,19 +20,23 @@ module.exports = function (sensor_reading_driver, pubsub_server) {
 */
   // Validates that the given reading is formally correct and consistant with the sensor type
   function normalizeDatapoints(sensor, input_data, log) {
+    var datapoints = [],
+        normalized_datapoints = [];
+
     //check that at least datapoints or current value are set consistently with the sensor type
-    if (!input_data.datapoints || !input_data.current_value) {
+    if (!input_data.datapoints && !input_data.current_value) {
       log.debug("Missing mandatory input parameter current_value and/or datapoints");
       return false;
     }
 
-    if (input_data.datapoints && !input_data.datapoints.isArray()){
-      log.debug("Invalid input parameter - datapoints is expected to be an array");
-      return false;
+    if (input_data.datapoints){
+      if (_.isArray(input_data.datapoints)) {
+        datapoints = _.clone(input_data.datapoints);
+      } else {
+        log.debug("Invalid input parameter - datapoints is expected to be an array");
+        return false;
+      }
     }
-
-    var datapoints = _.clone(input_data.datapoints),
-        normalized_datapoints = [];
 
     //parse the datapoints for errors, and normalize the time to microseconds, if necessary
     var _to_microsec = function(t){
@@ -46,14 +51,13 @@ module.exports = function (sensor_reading_driver, pubsub_server) {
         return parseInt(t, 10) * 1000;
       };
     }
-
     //normalize input values, and check the input format to be consistant with the sensor type
     var _normalize_values = function(d){
       return parseFloat(d);
     };
     if (sensor.type === 'geo') {
       _normalize_values = function(d){
-        if (!d.isArray() || d.length!==2) {
+        if (!_.isArray(d) || d.length!==2) {
           log.debug("Invalid input parameter - current value must be an array for a geo reading");
           return false;
         }
@@ -76,7 +80,7 @@ module.exports = function (sensor_reading_driver, pubsub_server) {
         return true;
       }
 
-      normalized_datapoints.push({"at": _to_microsec, "value": normalized_value});
+      normalized_datapoints.push({"at": _to_microsec(d.at), "value": normalized_value});
       return false;
     });
 
@@ -87,7 +91,7 @@ module.exports = function (sensor_reading_driver, pubsub_server) {
     //transform the current_value into a datapoint, and push it to the stack
     if (input_data.current_value) {
       var hr_time = process.hrtime(),
-          cur_microtime = hr_time[0] * 1000 + hr_time[1] / 1000,
+          cur_microtime = microtime.now(),
           normalized_value = _normalize_values(input_data.current_value);
       if (normalized_value === false) {
         return false;
@@ -103,8 +107,7 @@ module.exports = function (sensor_reading_driver, pubsub_server) {
     Sensor.findOne({_id: req.params.id, client: req.credentials.clientId}, function(err, sensor){
       next.ifError(err);
       if (!sensor) {
-        res.send(404);
-        return next();
+        return next(new restify.ResourceNotFoundError());
       }
       //we have to process the req.body, to see what format we are 
       var normalized_datapoints = normalizeDatapoints(sensor, req.body, req.log);
@@ -122,17 +125,26 @@ module.exports = function (sensor_reading_driver, pubsub_server) {
 
       pubsub_server.publish(pubsub_message, function(err){
         //we ignore any error on the publication
+        req.log.warn(err);
       });
 
       //store the data point(s) only if the sensor is persistant
       if (sensor.persistant) {
         sensor_reading_driver.create(sensor, normalized_datapoints, function (err, new_points){
           next.ifError(err);
-          res.send(201);
+          //if we wrote only 1 datapoint, return an object
+          if (normalized_datapoints.length === 1) {
+            normalized_datapoints = normalized_datapoints[0];
+          }
+          res.send(201, normalized_datapoints);
           return next();
         });
       } else {
-        res.send(200);
+        //if we wrote only 1 datapoint, return an object
+        if (normalized_datapoints.length === 1) {
+          normalized_datapoints = normalized_datapoints[0];
+        }
+        res.send(200, normalized_datapoints);
         return next();
       }
     });

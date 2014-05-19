@@ -36,7 +36,9 @@
     "underscore": "^1.6.0",
     "faye": "^1.0.1",
     "faye-redis": "^0.2.0",
-    "bluebird": "^1.2.4"
+    "bluebird": "^1.2.4",
+    "moment": "^2.6.0",
+    "microtime": "^0.6.0"
   },
   "devDependencies": {
     "grunt": "~0.4.2",
