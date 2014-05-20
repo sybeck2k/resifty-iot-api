@@ -24,5 +24,5 @@ module.exports = function (server, config, sensor_reading_driver, pubsub_server)
   server.post( '/sensor'    , validateClient, sensor_route.createSensor);
   server.patch('/sensor/:id', validateClient, validateObjectId, sensor_route.updateSensor);
   server.del(  '/sensor/:id', validateClient, validateObjectId, sensor_route.deleteSensor);
-  server.put(  '/sensor/:id', validateClient, validateObjectId, sensor_reading_routes.createPoint);
+  server.post( '/sensor/:id/datapoint', validateClient, validateObjectId, sensor_reading_routes.createPoint);
 };

@@ -284,26 +284,26 @@ describe "The /sensor resource", ->
 
     describe "the sensor reading", ->
       
-      it "PUT /sensor/:id should return not found if not existing", (done) -> 
+      it "POST /sensor/:id/datapoint should return not found if not existing", (done) -> 
         create_a_sensor (err, a_sensor) ->
           return done(err) if err
-          request(server).put("/sensor/"+mongoose.Types.ObjectId()).set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
+          request(server).post("/sensor/"+mongoose.Types.ObjectId()+"/datapoint").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
             .send({an: "object"})
             .expect("Content-Type", /json/)
             .expect 404 , done
       
-      it "PUT /sensor/:id should return a validation error if neither current_value nor datapoints are given", (done) -> 
+      it "POST /sensor/:id/datapoint should return a validation error if neither current_value nor datapoints are given", (done) -> 
         create_a_sensor (err, a_sensor) ->
           return done(err) if err
-          request(server).put("/sensor/#{a_sensor.id}").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
+          request(server).post("/sensor/#{a_sensor.id}/datapoint").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
             .send({an: "object"})
             .expect("Content-Type", /json/)
             .expect 409 , done
       
-      it "PUT /sensor/:id should return a validation error if datapoints is not an array", (done) -> 
+      it "POST /sensor/:id/datapoint should return a validation error if datapoints is not an array", (done) -> 
         create_a_sensor (err, a_sensor) ->
           return done(err) if err
-          request(server).put("/sensor/#{a_sensor.id}").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
+          request(server).post("/sensor/#{a_sensor.id}/datapoint").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
             .send({datapoints: "string"})
             .expect("Content-Type", /json/)
             .expect 409 , done
@@ -327,8 +327,8 @@ describe "The /sensor resource", ->
             a_geo_sensor = another_sensor
             done()
 
-        it "PUT /sensor/:id with 2 floats as current value should return a new reading", (done) ->
-          request(server).put("/sensor/#{a_geo_sensor.id}").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
+        it "POST /sensor/:id/datapoint with 2 floats as current value should return a new reading", (done) ->
+          request(server).post("/sensor/#{a_geo_sensor.id}/datapoint").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
             .send({current_value: [1.33, 100.33]})
             .expect("Content-Type", /json/)
             .expect 201
@@ -340,7 +340,7 @@ describe "The /sensor resource", ->
               (res.body.at / 1000000).should.be.above(now-1).and.be.below(now+1)
               done()
 
-        it "PUT /sensor/:id with a list of datapoints of array of floats should return a list of the same size of new readings", (done) ->
+        it "POST /sensor/:id/datapoint with a list of datapoints of array of floats should return a list of the same size of new readings", (done) ->
           datapoints = []
           for x in [1..15]
             test_array=[_.random(10,100),_.random(10,100)] 
@@ -348,7 +348,7 @@ describe "The /sensor resource", ->
               at: moment().unix() - x
               value: test_array
 
-          request(server).put("/sensor/#{a_geo_sensor.id}").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
+          request(server).post("/sensor/#{a_geo_sensor.id}/datapoint").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
             .send({datapoints: datapoints})
             .expect("Content-Type", /json/)
             .expect 201
@@ -358,7 +358,7 @@ describe "The /sensor resource", ->
               res.body.length.should.equal(15)
               done()
 
-        it "PUT /sensor/:id with a list of datapoints of array of floats AND a current reading should return a list of the same size of new readings", (done) ->
+        it "POST /sensor/:id/datapoint with a list of datapoints of array of floats AND a current reading should return a list of the same size of new readings", (done) ->
           datapoints = []
           for x in [1..15]
             test_array=[_.random(10,100),_.random(10,100)] 
@@ -366,7 +366,7 @@ describe "The /sensor resource", ->
               at: moment().unix() - x
               value: test_array
 
-          request(server).put("/sensor/#{a_geo_sensor.id}").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
+          request(server).post("/sensor/#{a_geo_sensor.id}/datapoint").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
             .send({datapoints: datapoints, current_value: [1.33, 100.33]})
             .expect("Content-Type", /json/)
             .expect 201
@@ -395,8 +395,8 @@ describe "The /sensor resource", ->
             a_geo_sensor = another_sensor
             done()
 
-        it "PUT /sensor/:id with a float as current value should return a new reading", (done) ->
-          request(server).put("/sensor/#{a_geo_sensor.id}").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
+        it "POST /sensor/:id/datapoint with a float as current value should return a new reading", (done) ->
+          request(server).post("/sensor/#{a_geo_sensor.id}/datapoint").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
             .send({current_value: 255.55})
             .expect("Content-Type", /json/)
             .expect 201
@@ -408,14 +408,14 @@ describe "The /sensor resource", ->
               (res.body.at / 1000000).should.be.above(now-1).and.be.below(now+1)
               done()
 
-        it "PUT /sensor/:id with a list of datapoints of floats should return a list of the same size of new readings", (done) ->
+        it "POST /sensor/:id/datapoint with a list of datapoints of floats should return a list of the same size of new readings", (done) ->
           datapoints = []
           for x in [1..15]
             datapoints.push 
               at: moment().unix() - x
               value: _.random(10,100)
 
-          request(server).put("/sensor/#{a_geo_sensor.id}").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
+          request(server).post("/sensor/#{a_geo_sensor.id}/datapoint").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
             .send({datapoints: datapoints})
             .expect("Content-Type", /json/)
             .expect 201
@@ -425,14 +425,14 @@ describe "The /sensor resource", ->
               res.body.length.should.equal(15)
               done()
 
-        it "PUT /sensor/:id with a list of datapoints of floats AND a current reading should return a list of the same size of new readings", (done) ->
+        it "POST /sensor/:id/datapoint with a list of datapoints of floats AND a current reading should return a list of the same size of new readings", (done) ->
           datapoints = []
           for x in [1..15]
             datapoints.push 
               at: moment().unix() - x
               value: _.random(10,100)
 
-          request(server).put("/sensor/#{a_geo_sensor.id}").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
+          request(server).post("/sensor/#{a_geo_sensor.id}/datapoint").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
             .send({datapoints: datapoints, current_value: 1.33})
             .expect("Content-Type", /json/)
             .expect 201

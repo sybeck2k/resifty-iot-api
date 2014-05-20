@@ -60,6 +60,7 @@
     "mocha-lcov-reporter": "0.0.1",
     "codeclimate-test-reporter": "0.0.3",
     "node-mocks-http": "^1.0.4",
-    "parse-links": "^0.1.0"
+    "parse-links": "^0.1.0",
+    "coveralls": "^2.10.0"
   }
 }
