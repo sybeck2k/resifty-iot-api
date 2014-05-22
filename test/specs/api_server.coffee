@@ -28,11 +28,12 @@ sensor_reading_driver.init (err, driver)->
   throw err if (err)
 
 oauth_methods = require("../../app/lib/oauth-hooks")(config, log, redis_client)
-server = require("../../app/api_server")(config, log, redis_client, oauth_methods, sensor_reading_driver)
 
 describe "The server", ->
+  server = undefined
+  
   beforeEach ->
-    server.listen(config.port)
+    server = require("../../app/api_server")(config, log, redis_client, oauth_methods, sensor_reading_driver)
 
   afterEach ->
     server.close()
