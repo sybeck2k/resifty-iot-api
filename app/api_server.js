@@ -9,18 +9,7 @@ var url               = require("url");
 
 var routes_path = require('path').normalize(__dirname) + '/routes';
 
-module.exports = function(config, log, redis_client) {
-  // get the Oauth hooks
-  var oauth_methods = require("./lib/oauth-hooks")(config, log, redis_client);
-  // get the driver for the sensor readings storage
-  var sensor_reading_driver = require(config.sensor_storage.driver)(config, log);
-
-  // initialize the driver of the sensor readings storage
-  sensor_reading_driver.init(function(err, driver){
-    if (err)
-      throw err;
-  });
-
+module.exports = function(config, log, redis_client, oauth_methods, sensor_reading_driver) {
   var api_server = restify.createServer({
     name: "iot API server",
     version: require("../package.json").version,
@@ -59,7 +48,6 @@ module.exports = function(config, log, redis_client) {
     }
   });
 
-
   api_server.use(restify.authorizationParser());
   api_server.use(restify.bodyParser({ mapParams: false }));
   api_server.pre(restify.pre.sanitizePath());
@@ -67,15 +55,6 @@ module.exports = function(config, log, redis_client) {
   api_server.pre(require("./lib/middleware/parse-pagination")(config));
 
   restifyOAuth2.cc(api_server, { tokenEndpoint: "/token", hooks: oauth_methods });
-
-  // initialize the Pub/Sub server
-  var pubsub_server = require(config.pubsub_server.driver)(config, log, oauth_methods);
-
-  pubsub_server.attach(api_server);
-
-  api_server.on('close', function(){
-    pubsub_server.close();
-  });
 
   //anything that gets here by the /pubsub path is actually handled by the pubsub server and thus is not a real 404!
   var rePubSubPattern = new RegExp(/^\/pubsub/);
@@ -86,26 +65,7 @@ module.exports = function(config, log, redis_client) {
   });
   
   // Bootstrap routes
-  require(routes_path + '/index')(api_server, config, sensor_reading_driver, pubsub_server);
-
-  api_server.get('/', function (req, res) {
-    var response = {
-      _links: {
-        self: { href: '/' }
-      }
-    };
-
-    response._links["oauth2-token"] = {
-      "href": '/token',
-      "grant-types": "client_credentials",
-      "token-types": "bearer"
-    };
-    
-    res.send(response);
-  });
-
-  api_server.listen(config.port);
-  log.info("API server listening on port " + config.port);
+  require(routes_path + '/index')(api_server, config, sensor_reading_driver);
 
   return api_server;
 };

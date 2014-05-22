@@ -17,6 +17,7 @@ var SensorSchema = new Schema({
   persistant:         { type: Boolean, default: true },
   description:        { type: String, trim: true},
   meta:               Schema.Types.Mixed,
+  direction:          { type: String, enum: ['input', 'output', 'bidirectional'], default: 'bidirectional' }, //is this sensor also an actuator?
   type:               { type: String, enum: ['geo', 'scalar', 'state'], default: 'scalar' }, //what is the reading (geospatial point, value, boolean state)?
   location:           { type: [], index: '2d'},
   time_precision:     { type: String, enum: ['s', 'm', 'u'], default: 's' }, //what is the time precision of the readings (seconds, millis, micros)?
@@ -31,6 +32,7 @@ SensorSchema.set('toJSON', {
       name:           ret.name,
       description:    ret.description,
       meta:           ret.meta,
+      direction:      ret.direction,
       location:       ret.location,
       device:         ret.device,
       time_precision: ret.time_precision,
@@ -71,7 +73,6 @@ SensorSchema.pre('save', function(next) {
 /**
  * Methods
  */
-
 SensorSchema.methods = {
 };
 
@@ -81,6 +82,7 @@ SensorSchema.statics = {
     'name',
     'description',
     'meta',
+    'direction',
     'location',
     'device',
     'time_precision',
@@ -91,6 +93,7 @@ SensorSchema.statics = {
     'name',
     'description',
     'meta',
+    'direction',
     'location',
     'device',
     'time_precision',

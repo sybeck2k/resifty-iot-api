@@ -11,7 +11,7 @@ Token    = mongoose.model("ClientToken")
 Device   = mongoose.model("Device")
 
 
-logger = new Logger(
+log = new Logger
   name: "restify-iot-test"
   streams: [
     stream: process.stderr
@@ -19,15 +19,22 @@ logger = new Logger(
   ]
   serializers:
     req: Logger.stdSerializers.req
-)
+
 
 redis_uri = require("url").parse(config.redis_url)
 redis_client = redis.createClient redis_uri.port, redis_uri.hostname
 if (redis_uri.auth)
   redis_client.auth redis_uri.auth.split(":")[1]
 
+sensor_reading_driver = require("../../app/lib/sensor-storage/memory")(config, log)
+
+sensor_reading_driver.init (err, driver)->
+  throw err if (err)
+
+oauth_methods = require("../../app/lib/oauth-hooks")(config, log, redis_client)
+server = require("../../app/api_server")(config, log, redis_client, oauth_methods, sensor_reading_driver)
+
 describe "The /device resource", ->
-  server = undefined
   client =
       client: "client_name"
       secret: "client_secret"
@@ -44,17 +51,17 @@ describe "The /device resource", ->
   before (done) ->
     Client.create client, (err, new_client) ->
       if err
-        logger.error err
+        log.error err
         throw new Error("impossible to create the sample client")
       client = new_client.toJSON()
       Token.create  {clientId: client.id, token: token.token, scope: token.scope}, (err, new_token) ->
         if err
-          logger.error err
+          log.error err
           throw new Error("impossible to create the sample token")
         token = new_token.toJSON()
         Device.create {name: a_device.name, description: a_device.description, client: client.id}, (err, new_device) ->
           if err
-            logger.error err
+            log.error err
             throw new Error("impossible to create the sample device")
           a_device = new_device.toJSON()
           done()
@@ -71,7 +78,7 @@ describe "The /device resource", ->
             done()
 
   beforeEach ->
-    server = require("../../app/server")(config, logger, redis_client)
+    server.listen(config.port)
 
   afterEach ->
     server.close()

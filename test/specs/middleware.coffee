@@ -4,7 +4,7 @@ sinon      = require("sinon")
 httpMocks  = require("node-mocks-http")
 parseLinks = require('parse-links')
 
-logger = new Logger(
+logger = new Logger
   name: "restify-iot-test"
   streams: [
     stream: process.stderr
@@ -12,7 +12,6 @@ logger = new Logger(
   ]
   serializers:
     req: Logger.stdSerializers.req
-)
 
 
 describe "The Pagination middleware", ->

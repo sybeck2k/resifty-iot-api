@@ -9,10 +9,10 @@ module.exports = {
   port: '9095',
   db_url: 'mongodb://localhost:27017/restify_test',
   sensor_storage: {
-    driver: './lib/sensor-storage/memory'
+    driver: 'memory'
   },
   pubsub_server: {
-    driver: './lib/pubsub-server/faye_server',
+    driver: 'faye_server',
   },
   pagination: {
     max_results: 100,

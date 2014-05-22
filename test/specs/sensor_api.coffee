@@ -12,7 +12,7 @@ Token    = mongoose.model("ClientToken")
 Device   = mongoose.model("Device")
 Sensor   = mongoose.model("Sensor")
 
-logger = new Logger(
+log = new Logger
   name: "restify-iot-test"
   streams: [
     stream: process.stderr
@@ -20,15 +20,22 @@ logger = new Logger(
   ]
   serializers:
     req: Logger.stdSerializers.req
-)
+
 
 redis_uri = require("url").parse(config.redis_url)
 redis_client = redis.createClient redis_uri.port, redis_uri.hostname
 if (redis_uri.auth)
   redis_client.auth redis_uri.auth.split(":")[1]
 
+sensor_reading_driver = require("../../app/lib/sensor-storage/memory")(config, log)
+
+sensor_reading_driver.init (err, driver)->
+  throw err if (err)
+
+oauth_methods = require("../../app/lib/oauth-hooks")(config, log, redis_client)
+server = require("../../app/api_server")(config, log, redis_client, oauth_methods, sensor_reading_driver)
+
 describe "The /sensor resource", ->
-  server = undefined
   client =
       client: "client_name"
       secret: "client_secret"
@@ -54,8 +61,9 @@ describe "The /sensor resource", ->
         type:        "scalar"
         meta:        {"some":"meta", "data":[0,1]}
         location:    []
-        device:      a_device.id
-        client:     client.id
+
+    a_sensor.device = a_device.id
+    a_sensor.client  = client.id
 
     Sensor.create a_sensor, (err, new_sensor) ->
       if err
@@ -65,17 +73,17 @@ describe "The /sensor resource", ->
   before (done) ->
     Client.create client, (err, new_client) ->
       if err
-        logger.error err
+        log.error err
         throw new Error("impossible to create the sample client")
       client = new_client.toJSON()
       Token.create  {clientId: client.id, token: token.token, scope: token.scope}, (err, new_token) ->
         if err
-          logger.error err
+          log.error err
           throw new Error("impossible to create the sample token")
         token = new_token.toJSON()
         Device.create {name: a_device.name, description: a_device.description, client: client.id}, (err, new_device) ->
           if err
-            logger.error err
+            log.error err
             throw new Error("impossible to create the sample device")
           a_device = new_device.toJSON()
           done()
@@ -94,7 +102,7 @@ describe "The /sensor resource", ->
               done()
 
   beforeEach (done) ->
-    server = require("../../app/server")(config, logger, redis_client)
+    server.listen(config.port)
     done()
 
   afterEach (done) ->
@@ -307,6 +315,15 @@ describe "The /sensor resource", ->
             .send({datapoints: "string"})
             .expect("Content-Type", /json/)
             .expect 409 , done
+      
+      it "POST /sensor/:id/datapoint should return a method not allowed error if the sensor is output only", (done) ->
+        a_sensor.direction = 'output'
+        create_a_sensor a_sensor, (err, a_sensor) ->
+          return done(err) if err
+          request(server).post("/sensor/#{a_sensor.id}/datapoint").set("Accept", "application/json").set('Authorization', "Bearer #{token.token}")
+            .send({datapoints: "string"})
+            .expect("Content-Type", /json/)
+            .expect 405 , done
 
       describe "of type `geo`", ->
         a_geo_sensor = undefined

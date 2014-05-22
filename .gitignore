@@ -16,3 +16,5 @@ node_modules
 sftp-config.json
 
 coverage.lcov
+.coveralls.yml
+

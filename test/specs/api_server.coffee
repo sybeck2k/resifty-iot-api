@@ -7,7 +7,7 @@ redis    = require("redis")
 Client   = mongoose.model("ClientKey")
 Token    = mongoose.model("ClientToken")
 
-logger = new Logger(
+log = new Logger
   name: "restify-iot-test"
   streams: [
     stream: process.stderr
@@ -15,18 +15,24 @@ logger = new Logger(
   ]
   serializers:
     req: Logger.stdSerializers.req
-)
+
 
 redis_uri = require("url").parse(config.redis_url)
 redis_client = redis.createClient redis_uri.port, redis_uri.hostname
 if (redis_uri.auth)
   redis_client.auth redis_uri.auth.split(":")[1]
 
+sensor_reading_driver = require("../../app/lib/sensor-storage/memory")(config, log)
+
+sensor_reading_driver.init (err, driver)->
+  throw err if (err)
+
+oauth_methods = require("../../app/lib/oauth-hooks")(config, log, redis_client)
+server = require("../../app/api_server")(config, log, redis_client, oauth_methods, sensor_reading_driver)
 
 describe "The server", ->
-  server = undefined
   beforeEach ->
-    server = require("../../app/server")(config, logger, redis_client)
+    server.listen(config.port)
 
   afterEach ->
     server.close()

@@ -6,18 +6,9 @@ var restify   = require('restify'),
     _         = require('underscore'),
     microtime = require('microtime');
 
-module.exports = function (sensor_reading_driver, pubsub_server) {
+module.exports = function (sensor_reading_driver) {
   var routes = {};
 
-/*
-"datapoints":[
-        {"at":"2013-04-22T00:35:43Z","value":"42"},
-        {"at":"2013-04-22T00:55:43Z","value":"84"},
-        {"at":"2013-04-22T01:15:43Z","value":"41"},
-        {"at":"2013-04-22T01:35:43Z","value":"83"}
-        ],
-"current_value" : "40"
-*/
   // Validates that the given reading is formally correct and consistant with the sensor type
   function normalizeDatapoints(sensor, input_data, log) {
     var datapoints = [],
@@ -103,51 +94,50 @@ module.exports = function (sensor_reading_driver, pubsub_server) {
   }
 
   routes.createPoint = function (req, res, next) {
+    var server = this;
     // Validates that the given sensor exists and is associated to the authenticated client
-    Sensor.findOne({_id: req.params.id, client: req.credentials.clientId}, function(err, sensor){
-      next.ifError(err);
-      if (!sensor) {
-        return next(new restify.ResourceNotFoundError());
-      }
-      //we have to process the req.body, to see what format we are 
-      var normalized_datapoints = normalizeDatapoints(sensor, req.body, req.log);
-      if(normalized_datapoints === false) {
-        return next(new restify.InvalidArgumentError());
-      }
-      
-      //mqtt-compliant
-      var pubsub_message = {
-        topic: '/sensor-reading/' + sensor.id,
-        payload: normalized_datapoints,
-        qos: 0, // 0, 1, or 2
-        retain: sensor.persistant
-      };
+    Sensor.findOne({_id: req.params.id, client: req.credentials.clientId}).exec()
+      .then(function(sensor){
+        if (!sensor) {
+          return next(new restify.ResourceNotFoundError());
+        }
 
-      pubsub_server.publish(pubsub_message, function(err){
-        //we ignore any error on the publication
-        req.log.warn(err);
-      });
+        //only input or bidirectional sensors can have a reading
+        if (sensor.direction === 'output') {
+          return next(new restify.BadMethodError());
+        }
 
-      //store the data point(s) only if the sensor is persistant
-      if (sensor.persistant) {
-        sensor_reading_driver.create(sensor, normalized_datapoints, function (err, new_points){
-          next.ifError(err);
+        //we have to process the req.body, to see what format we are 
+        var normalized_datapoints = normalizeDatapoints(sensor, req.body, req.log);
+        if(normalized_datapoints === false) {
+          return next(new restify.InvalidArgumentError());
+        }
+        
+        server.emit("datapoint.created", sensor, normalized_datapoints);
+        
+        //store the data point(s) only if the sensor is persistant
+        if (sensor.persistant) {
+          sensor_reading_driver.create(sensor, normalized_datapoints, function (err, new_points){
+            next.ifError(err);
+            //if we wrote only 1 datapoint, return an object
+            if (normalized_datapoints.length === 1) {
+              normalized_datapoints = normalized_datapoints[0];
+            }
+            res.send(201, normalized_datapoints);
+            return next();
+          });
+        } else {
           //if we wrote only 1 datapoint, return an object
           if (normalized_datapoints.length === 1) {
             normalized_datapoints = normalized_datapoints[0];
           }
-          res.send(201, normalized_datapoints);
+          res.send(200, normalized_datapoints);
           return next();
-        });
-      } else {
-        //if we wrote only 1 datapoint, return an object
-        if (normalized_datapoints.length === 1) {
-          normalized_datapoints = normalized_datapoints[0];
         }
-        res.send(200, normalized_datapoints);
-        return next();
-      }
-    });
+      })
+      .then(null, function(err) {
+        return next(err);
+      });
     
   };
 

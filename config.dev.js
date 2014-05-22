@@ -9,7 +9,7 @@ module.exports = {
   port: '9090',
   db_url: 'mongodb://localhost:27017/restify_dev',
   sensor_storage: {
-    driver: './lib/sensor-storage/influxdb',
+    driver: 'influxdb',
     host: "localhost",
     port: "8086",
     username: "root",
@@ -17,7 +17,7 @@ module.exports = {
     database: "test"
   },
   pubsub_server: {
-    driver: './lib/pubsub-server/faye_server',
+    driver: 'faye_server',
   },
   pagination: {
     max_results: 100,
