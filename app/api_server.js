@@ -53,6 +53,7 @@ module.exports = function(config, log, redis_client, oauth_methods, sensor_readi
   api_server.pre(restify.pre.sanitizePath());
 
   api_server.pre(require("./lib/middleware/parse-pagination")(config));
+  api_server.pre(require("./lib/middleware/parse-prefer-header"));
 
   restifyOAuth2.cc(api_server, { tokenEndpoint: "/token", hooks: oauth_methods });
 

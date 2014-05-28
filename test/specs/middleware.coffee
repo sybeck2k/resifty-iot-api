@@ -120,3 +120,46 @@ describe "The Pagination middleware", ->
     spyCall.statusCode.should.equal(500)
     done()
 
+describe "The Prefer header parser middleware", ->
+  mw = require("../../app/lib/middleware/parse-prefer-header")
+  next_spy = undefined
+  res = undefined
+
+  beforeEach ->
+    next_spy  = sinon.spy()
+    res = httpMocks.createResponse()
+
+  it "injects an empty prefer object in the request if no prefer header is given", (done) ->
+    req  = httpMocks.createRequest {}
+    mw(req, res, next_spy)
+    req.prefer.should.be.ok
+    req.prefer.should.be.empty
+    done()
+
+  it "injects an empty prefer object in the request if it has an empty prefer header", (done) ->
+    req  = httpMocks.createRequest {
+      headers:
+        "prefer": ""
+    }
+    mw(req, res, next_spy)
+    req.prefer.should.be.ok
+    req.prefer.should.be.empty
+    done()
+
+  it "injects a prefer object with respond-async true in the request if it has the option respond-async in the prefer header", (done) ->
+    req  = httpMocks.createRequest {
+      headers:
+        "prefer": "respond-async"
+    }
+    mw(req, res, next_spy)
+    req.prefer["respond-async"].should.be.equal(true)
+    done()
+
+  it "injects a prefer object with a wait value in the request if it has the option wait with a decimal value in the prefer header", (done) ->
+    req  = httpMocks.createRequest {
+      headers:
+        "prefer": "wait=15"
+    }
+    mw(req, res, next_spy)
+    req.prefer["wait"].should.be.equal(15)
+    done()
